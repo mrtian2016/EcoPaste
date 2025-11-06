@@ -17,6 +17,7 @@ export class SyncManager {
   ) => void;
   private onHistoryCleared?: () => void;
   private onTimestampUpdated?: (id: string, createTime: string) => void;
+  private onConnectedCallback?: () => void;
 
   constructor() {
     this.wsClient = new WebSocketClient(syncConfig);
@@ -106,7 +107,11 @@ export class SyncManager {
    * 连接到服务器
    */
   async connect(): Promise<void> {
-    return this.wsClient.connect();
+    await this.wsClient.connect();
+    // 连接成功后触发回调
+    if (this.onConnectedCallback) {
+      this.onConnectedCallback();
+    }
   }
 
   /**
@@ -252,6 +257,13 @@ export class SyncManager {
    */
   onTimestampUpdate(callback: (id: string, createTime: string) => void): void {
     this.onTimestampUpdated = callback;
+  }
+
+  /**
+   * 注册连接成功回调
+   */
+  onConnected(callback: () => void): void {
+    this.onConnectedCallback = callback;
   }
 
   async syncPending(): Promise<void> {

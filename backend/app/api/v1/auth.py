@@ -1,14 +1,14 @@
 """
 认证 API 路由
 """
-from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from loguru import logger
 
-from app.models.db_models import User as DBUser
+from app.models.db_models import User as DBUser, Device
 from app.models.schemas import (
     User, UserCreate, UserUpdate, Token, LoginRequest, UserSettings, UserSettingsUpdate, ApiResponse
 )
@@ -313,3 +313,88 @@ async def update_user_settings(
     return UserSettings(
         max_history_items=current_user.max_history_items
     )
+
+
+@router.post("/register_device", response_model=ApiResponse, summary="注册或更新设备信息")
+async def register_device(
+    device_id: str = Body(..., embed=True, description="设备ID"),
+    device_name: str = Body(..., embed=True, description="设备名称"),
+    device_type: str = Body(None, embed=True, description="设备类型（可选）"),
+    session: AsyncSession = Depends(get_db),
+    current_user: DBUser = Depends(get_current_active_user)
+):
+    """
+    注册或更新设备信息到数据库
+    
+    在用户登录成功后调用，确保设备信息被持久化到数据库
+    
+    Args:
+        device_id: 设备唯一标识
+        device_name: 设备名称
+        device_type: 设备类型（可选）
+        session: 数据库会话
+        current_user: 当前用户
+    
+    Returns:
+        操作结果
+    """
+    try:
+        # 查询设备是否已存在
+        result = await session.execute(
+            select(Device).where(
+                Device.device_id == device_id,
+                Device.user_id == current_user.id
+            )
+        )
+        device = result.scalar_one_or_none()
+        
+        now = datetime.now(timezone.utc).isoformat()
+        
+        if device:
+            # 设备已存在，更新信息
+            device.device_name = device_name
+            if device_type:
+                device.device_type = device_type
+            device.last_online = now
+            
+            await session.commit()
+            
+            logger.info(
+                f"设备信息已更新: device_id={device_id}, "
+                f"device_name={device_name}, user={current_user.username}"
+            )
+            
+            return {
+                "success": True,
+                "message": "设备信息已更新"
+            }
+        else:
+            # 设备不存在，创建新记录
+            new_device = Device(
+                device_id=device_id,
+                device_name=device_name,
+                device_type=device_type,
+                user_id=current_user.id,
+                last_online=now,
+                created_at=now
+            )
+            
+            session.add(new_device)
+            await session.commit()
+            
+            logger.info(
+                f"新设备已注册: device_id={device_id}, "
+                f"device_name={device_name}, user={current_user.username}"
+            )
+            
+            return {
+                "success": True,
+                "message": "设备已注册"
+            }
+    
+    except Exception as e:
+        logger.error(f"注册设备失败: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"注册设备失败: {str(e)}"
+        )

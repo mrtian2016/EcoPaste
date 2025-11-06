@@ -501,8 +501,9 @@ async def handle_fetch_history(websocket, payload, user, message_id):
         items = result.scalars().all()
 
         # 转换为字典（对齐前端字段名）
-        items_dict = [
-            {
+        items_dict = []
+        for item in items:
+            item_data = {
                 "id": item.id,
                 "type": item.type,
                 "group": item.group,
@@ -521,8 +522,19 @@ async def handle_fetch_history(websocket, payload, user, message_id):
                 "synced": item.synced,
                 "updated_at": format_datetime_str(item.updated_at) if item.updated_at else None,
             }
-            for item in items
-        ]
+            
+            # 对于图片类型，添加下载字段
+            if item.type == "image" and item.value:
+                item_data["remote_file_id"] = item.value
+                item_data["remote_file_url"] = f"/api/v1/files/download/{item.value}"
+                # 如果有原始文件名，也添加进去（通常 file_id 本身就包含扩展名）
+                item_data["remote_file_name"] = item.value
+            
+            # 对于文件列表类型，添加 remote_files
+            if item.type == "files" and item.value:
+                item_data["remote_files"] = item.value
+            
+            items_dict.append(item_data)
 
         await websocket.send_json({
             "type": "history_data",

@@ -23,11 +23,11 @@ export const useSync = () => {
     }
 
     try {
-      await syncManager.connect();
+      // 先启用同步引擎（注册回调）
       syncEngine.enable();
 
-      // 连接成功后同步未同步的记录
-      await syncEngine.syncPending();
+      // 连接到服务器（会自动触发 fullSync）
+      await syncManager.connect();
 
       message.success("同步已连接");
     } catch (error) {
@@ -39,9 +39,9 @@ export const useSync = () => {
   /**
    * 断开连接
    */
-  const disconnect = useCallback(() => {
+  const disconnect = useCallback(async () => {
     syncManager.disconnect();
-    syncEngine.disable();
+    await syncEngine.disable();
     message.info("同步已断开");
   }, []);
 
@@ -50,7 +50,7 @@ export const useSync = () => {
    */
   const toggleSync = useCallback(async () => {
     if (config.enabled) {
-      disconnect();
+      await disconnect();
       syncConfig.enabled = false;
     } else {
       if (!config.token) {
@@ -79,8 +79,12 @@ export const useSync = () => {
    */
   const syncPending = useCallback(async () => {
     try {
-      await syncEngine.syncPending();
-      message.success("同步完成");
+      const count = await syncEngine.syncPending();
+      if (count > 0) {
+        message.success(`已同步 ${count} 条记录`);
+      } else {
+        message.info("没有待同步的记录");
+      }
     } catch (_error) {
       message.error("同步失败");
     }

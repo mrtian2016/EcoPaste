@@ -89,6 +89,7 @@ class Device(Base):
     device_name: Mapped[str] = mapped_column(String(100), nullable=False, comment="设备名称")
     device_type: Mapped[Optional[str]] = mapped_column(String(50), comment="设备类型")
     last_online: Mapped[Optional[str]] = mapped_column(String(50), comment="最后在线时间 ISO 8601")
+    last_sync_time: Mapped[Optional[str]] = mapped_column(String(50), comment="最后同步时间 ISO 8601")
     created_at: Mapped[str] = mapped_column(String(50), nullable=False, comment="创建时间 ISO 8601")
 
     def __repr__(self) -> str:

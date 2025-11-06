@@ -14,7 +14,7 @@ import string
 from nanoid import generate
 
 from app.api.deps import get_db
-from app.models.db_models import ClipboardHistory, User as DBUser
+from app.models.db_models import ClipboardHistory, User as DBUser, Device
 from app.models.schemas import (
     ClipboardItem,
     ClipboardItemCreate,
@@ -714,3 +714,172 @@ def generate_random_url() -> str:
         return f"https://{domain}/{path}"
     else:
         return f"https://{domain}"
+
+
+@router.get("/sync/fetch_updates", summary="获取未同步的剪贴板数据")
+async def fetch_sync_updates(
+    device_id: str = Query(..., description="设备ID"),
+    limit: int = Query(50, ge=1, le=100, description="每次最多获取的数量"),
+    offset: int = Query(0, ge=0, description="偏移量"),
+    db: AsyncSession = Depends(get_db),
+    current_user: DBUser = Depends(get_current_active_user)
+):
+    """
+    基于设备上次同步时间，获取未同步的剪贴板数据
+    
+    工作原理：
+    1. 从设备表中获取该设备的 last_sync_time
+    2. 查询所有 createTime > last_sync_time 的数据
+    3. 返回分页数据
+    
+    优势：
+    - 服务器端记录同步状态，更可靠
+    - 避免重复拉取已同步的数据
+    - 支持分页获取大量数据
+    """
+    try:
+        # 查询或创建设备记录
+        device_result = await db.execute(
+            select(Device).where(
+                Device.device_id == device_id,
+                Device.user_id == current_user.id
+            )
+        )
+        device = device_result.scalar_one_or_none()
+        
+        # 如果设备不存在，返回空列表（设备应该在首次连接时创建）
+        if not device:
+            logger.warning(f"设备不存在: device_id={device_id}, user={current_user.username}")
+            return {
+                "total": 0,
+                "page": 1,
+                "page_size": limit,
+                "items": []
+            }
+        
+        # 构建查询：获取比设备上次同步时间更新的数据
+        query = select(ClipboardHistory).where(ClipboardHistory.user_id == current_user.id)
+        
+        if device.last_sync_time:
+            # 只获取比上次同步时间更新的数据
+            query = query.where(ClipboardHistory.createTime > device.last_sync_time)
+            logger.info(f"获取增量数据: device={device_id}, since={device.last_sync_time}")
+        else:
+            # 首次同步，获取所有数据
+            logger.info(f"首次同步: device={device_id}, 获取所有数据")
+        
+        # 获取总数
+        count_query = select(func.count()).select_from(query.subquery())
+        total_result = await db.execute(count_query)
+        total = total_result.scalar() or 0
+        
+        # 添加排序和分页
+        query = query.order_by(ClipboardHistory.createTime.asc()).limit(limit).offset(offset)
+        
+        # 执行查询
+        result = await db.execute(query)
+        items = result.scalars().all()
+        
+        # 转换数据，添加图片/文件下载字段
+        items_list = []
+        for item in items:
+            item_data = {
+                "id": item.id,
+                "type": item.type,
+                "group": item.group,
+                "value": item.value,
+                "search": item.search,
+                "count": item.count,
+                "width": item.width,
+                "height": item.height,
+                "favorite": item.favorite,
+                "createTime": format_datetime_str(item.createTime),
+                "note": item.note,
+                "subtype": item.subtype,
+                "device_id": item.device_id,
+                "device_name": item.device_name,
+                "content_hash": item.content_hash,
+                "synced": item.synced,
+                "updated_at": format_datetime_str(item.updated_at) if item.updated_at else None,
+            }
+            
+            # 对于图片类型，添加下载字段
+            if item.type == "image" and item.value:
+                item_data["remote_file_id"] = item.value
+                item_data["remote_file_url"] = f"/api/v1/files/download/{item.value}"
+                item_data["remote_file_name"] = item.value
+            
+            # 对于文件列表类型，添加 remote_files
+            if item.type == "files" and item.value:
+                item_data["remote_files"] = item.value
+            
+            items_list.append(item_data)
+        
+        logger.info(
+            f"同步数据查询: device={device_id}, total={total}, "
+            f"returned={len(items)}, offset={offset}, limit={limit}"
+        )
+        
+        return {
+            "total": total,
+            "page": (offset // limit) + 1,
+            "page_size": limit,
+            "items": items_list
+        }
+        
+    except Exception as e:
+        logger.error(f"获取同步数据失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sync/update_sync_time", response_model=ApiResponse, summary="更新设备同步时间")
+async def update_device_sync_time(
+    device_id: str = Body(..., embed=True, description="设备ID"),
+    sync_time: str = Body(..., embed=True, description="同步时间 ISO 8601"),
+    db: AsyncSession = Depends(get_db),
+    current_user: DBUser = Depends(get_current_active_user)
+):
+    """
+    更新设备的最后同步时间
+    
+    在客户端完成数据拉取后调用，更新设备的 last_sync_time
+    """
+    try:
+        # 查询设备
+        device_result = await db.execute(
+            select(Device).where(
+                Device.device_id == device_id,
+                Device.user_id == current_user.id
+            )
+        )
+        device = device_result.scalar_one_or_none()
+        
+        if not device:
+            # 设备不存在，创建新设备
+            device = Device(
+                device_id=device_id,
+                device_name=device_id,  # 默认使用 device_id 作为名称
+                user_id=current_user.id,
+                last_sync_time=sync_time,
+                created_at=datetime.now(timezone.utc).isoformat()
+            )
+            db.add(device)
+            logger.info(f"创建新设备: device_id={device_id}, user={current_user.username}")
+        else:
+            # 更新同步时间
+            device.last_sync_time = sync_time
+            logger.info(
+                f"更新设备同步时间: device_id={device_id}, "
+                f"sync_time={sync_time}, user={current_user.username}"
+            )
+        
+        await db.flush()
+        
+        return {
+            "success": True,
+            "message": "同步时间已更新"
+        }
+        
+    except Exception as e:
+        logger.error(f"更新同步时间失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

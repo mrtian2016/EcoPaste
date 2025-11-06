@@ -59,7 +59,44 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
   // 保存 token
   saveToken(authData.access_token);
 
+  // 登录成功后自动注册设备信息
+  try {
+    await registerDevice();
+  } catch (_error) {
+    // throw error;
+    // console.error("注册设备信息失败:", error);
+    // 设备注册失败不影响登录流程
+  }
+
   return authData;
+}
+
+/**
+ * 注册设备信息到服务器
+ */
+export async function registerDevice(): Promise<void> {
+  const baseUrl = getHttpBaseUrl();
+
+  if (!syncConfig.token) {
+    throw new Error("未登录");
+  }
+
+  const response = await fetch(`${baseUrl}/api/v1/auth/register_device`, {
+    body: JSON.stringify({
+      device_id: syncConfig.deviceId,
+      device_name: syncConfig.deviceName,
+    }),
+    headers: {
+      Authorization: `Bearer ${syncConfig.token}`,
+      "Content-Type": "application/json",
+    },
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "注册设备失败");
+  }
 }
 
 /**
