@@ -59,31 +59,49 @@ export class SyncEngine {
     syncManager.onSync(async (item) => {
       LogInfo(`[SyncEngine] onSync 回调被调用，item: ${JSON.stringify(item)}`);
       await this.handleRemoteSync(item);
+      // 发送事件通知 UI 刷新列表
+      await emit(LISTEN_KEY.REFRESH_CLIPBOARD_LIST);
+      LogInfo("已发送刷新列表事件");
     });
 
     // 处理删除
     syncManager.onDelete(async (id) => {
       await this.handleRemoteDelete(id);
+      // 发送事件通知 UI 刷新列表
+      await emit(LISTEN_KEY.REFRESH_CLIPBOARD_LIST);
+      LogInfo("已发送刷新列表事件");
     });
 
     // 处理批量删除
     syncManager.onBatchDelete(async (ids) => {
       await this.handleRemoteBatchDelete(ids);
+      // 发送事件通知 UI 刷新列表
+      await emit(LISTEN_KEY.REFRESH_CLIPBOARD_LIST);
+      LogInfo("已发送刷新列表事件");
     });
 
     // 处理更新
     syncManager.onUpdate(async (id, updates) => {
       await this.handleRemoteUpdate(id, updates);
+      // 发送事件通知 UI 刷新列表
+      await emit(LISTEN_KEY.REFRESH_CLIPBOARD_LIST);
+      LogInfo("已发送刷新列表事件");
     });
 
     // 处理历史清空
     syncManager.onClearHistory(async () => {
       await this.handleRemoteClearHistory();
+      // 发送事件通知 UI 刷新列表
+      await emit(LISTEN_KEY.REFRESH_CLIPBOARD_LIST);
+      LogInfo("已发送刷新列表事件");
     });
 
     // 处理时间戳更新
     syncManager.onTimestampUpdate(async (id, createTime) => {
       await this.handleRemoteTimestampUpdate(id, createTime);
+      // 发送事件通知 UI 刷新列表
+      await emit(LISTEN_KEY.REFRESH_CLIPBOARD_LIST);
+      LogInfo("已发送刷新列表事件");
     });
   }
 
@@ -327,10 +345,6 @@ export class SyncEngine {
 
         LogInfo(`插入远程数据: ${remoteData.id}`);
       }
-
-      // 发送事件通知 UI 刷新列表
-      await emit(LISTEN_KEY.REFRESH_CLIPBOARD_LIST);
-      LogInfo("已发送刷新列表事件");
 
       // 写入系统剪贴板
       await this.writeToSystemClipboard(localData as DatabaseSchemaHistory);
