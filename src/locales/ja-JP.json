@@ -253,7 +253,8 @@
         "clipboard": "クリップボード",
         "general": "共通設定",
         "history": "履歴",
-        "shortcut": "ショートカットキー"
+        "shortcut": "ショートカットキー",
+        "sync": "クラウド同期"
       }
     },
     "settings": {

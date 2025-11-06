@@ -8,14 +8,11 @@ import {
   startListening,
 } from "tauri-plugin-clipboard-x-api";
 import { fullName } from "tauri-plugin-fs-pro-api";
-import {
-  insertHistory,
-  selectHistory,
-  updateHistory,
-} from "@/database/history";
+import { selectHistory } from "@/database/history"; // selectHistory 不需要同步
 import type { State } from "@/pages/Main";
 import { getClipboardTextSubtype } from "@/plugins/clipboard";
 import { clipboardStore } from "@/stores/clipboard";
+import { insertHistory, updateHistory } from "@/sync"; // 使用带同步功能的包装器
 import type { DatabaseSchemaHistory } from "@/types/database";
 import { formatDate } from "@/utils/dayjs";
 

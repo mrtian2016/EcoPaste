@@ -5,6 +5,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useBoolean, useEventListener, useKeyPress, useMount } from "ahooks";
 import { ConfigProvider, theme } from "antd";
 import { isString } from "es-toolkit";
+import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
 import { useSnapshot } from "valtio";
 import { LISTEN_KEY, PRESET_SHORTCUT } from "./constants";
@@ -16,6 +17,7 @@ import { getAntdLocale, i18n } from "./locales";
 import { hideWindow, showWindow } from "./plugins/window";
 import { router } from "./router";
 import { globalStore } from "./stores/global";
+import { syncConfig, syncEngine, syncManager } from "./sync";
 import { generateColorVars } from "./utils/color";
 import { isURL } from "./utils/is";
 import { restoreStore } from "./utils/store";
@@ -37,6 +39,28 @@ const App = () => {
     // 生成 antd 的颜色变量
     generateColorVars();
   });
+
+  // 监听同步配置变化，自动连接/断开（仅在主窗口）
+  const { enabled: syncEnabled, token } = useSnapshot(syncConfig);
+
+  useEffect(() => {
+    const appWindow = getCurrentWebviewWindow();
+
+    // 只在主窗口初始化同步
+    if (appWindow.label !== "main") return;
+
+    // 如果已登录且启用了同步，自动连接
+    if (token && syncEnabled) {
+      syncEngine.enable();
+      syncManager.connect().catch((err) => {
+        error(`同步连接失败: ${err}`);
+      });
+    } else {
+      // 未启用同步或未登录时，断开连接（非手动断开）
+      syncEngine.disable();
+      syncManager.disconnect(false);
+    }
+  }, [syncEnabled, token]);
 
   // 监听语言的变化
   useImmediateKey(globalStore.appearance, "language", i18n.changeLanguage);

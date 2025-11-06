@@ -253,7 +253,8 @@
         "clipboard": "Clipboard",
         "general": "General",
         "history": "History",
-        "shortcut": "Shortcuts"
+        "shortcut": "Shortcuts",
+        "sync": "Cloud Sync"
       }
     },
     "settings": {
@@ -335,6 +336,69 @@
           "quick_paste": "Quick Paste"
         },
         "title": "Shortcuts"
+      }
+    },
+    "sync": {
+      "sync": {
+        "button": {
+          "disable_sync": "Disable Sync",
+          "enable_sync": "Enable Sync",
+          "login": "Login",
+          "logout": "Logout",
+          "register": "Register",
+          "switch_to_login": "Switch to Login",
+          "switch_to_register": "Switch to Register"
+        },
+        "hints": {
+          "configure_server": "Please configure server address",
+          "configure_server_first": "Please configure server address first",
+          "input_credentials": "Please enter username and password",
+          "login_first": "Please login first",
+          "server_example": "Example: http://192.168.1.199:5280 or http://localhost:8000",
+          "server_locked": "⚠️ Cannot change server address after login. Please logout first.",
+          "server_placeholder": "Enter server address, e.g.: http://192.168.1.199:5280"
+        },
+        "label": {
+          "account_info": "Account Info",
+          "auto_reconnect": "Auto Reconnect",
+          "connected_at": "Connected At",
+          "debug_info": "Debug Info",
+          "device_id": "Device ID",
+          "device_name": "Device Name",
+          "error": "Error",
+          "heartbeat_interval": "Heartbeat Interval",
+          "last_sync": "Last Sync",
+          "login_account": "Login Account",
+          "online_devices": "Online Devices",
+          "online_devices_list": "Online Devices",
+          "password": "Password",
+          "reconnect_interval": "Reconnect Interval",
+          "register_account": "Register Account",
+          "server_address": "Server Address",
+          "server_address_required": "Server Address *",
+          "status": "Status",
+          "sync_control": "Sync Control",
+          "user": "User",
+          "username": "Username",
+          "websocket_address": "WebSocket Address"
+        },
+        "message": {
+          "connect_failed": "Connection failed",
+          "login_failed": "Login failed",
+          "login_success": "Login successful",
+          "logout_success": "Logged out",
+          "register_failed": "Registration failed",
+          "register_success": "Registration successful",
+          "sync_disabled": "Sync disabled",
+          "sync_enabled": "Sync enabled"
+        },
+        "status": {
+          "connected": "Connected",
+          "connecting": "Connecting...",
+          "disconnected": "Disconnected",
+          "error": "Connection Error"
+        },
+        "title": "Clipboard Sync"
       }
     },
     "title": "Preferences"

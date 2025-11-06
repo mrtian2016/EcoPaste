@@ -16,7 +16,8 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import AdaptiveSelect from "@/components/AdaptiveSelect";
 import { LISTEN_KEY } from "@/constants";
-import { deleteHistory, selectHistory } from "@/database/history";
+import { selectHistory } from "@/database/history"; // selectHistory 不需要同步
+import { deleteHistory } from "@/sync"; // 使用带同步功能的包装器
 import { dayjs, formatDate } from "@/utils/dayjs";
 
 const { RangePicker } = DatePicker;

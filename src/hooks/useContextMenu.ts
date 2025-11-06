@@ -6,12 +6,12 @@ import { find, isArray, remove } from "es-toolkit/compat";
 import { type MouseEvent, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnapshot } from "valtio";
-import { deleteHistory, updateHistory } from "@/database/history";
 import { MainContext } from "@/pages/Main";
 import type { ItemProps } from "@/pages/Main/components/HistoryList/components/Item";
 import { pasteToClipboard, writeToClipboard } from "@/plugins/clipboard";
 import { clipboardStore } from "@/stores/clipboard";
 import { globalStore } from "@/stores/global";
+import { deleteHistory, updateHistory } from "@/sync"; // 使用带同步功能的包装器
 import { isMac } from "@/utils/is";
 import { join } from "@/utils/path";
 

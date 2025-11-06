@@ -9,9 +9,9 @@ import {
   useRef,
   useState,
 } from "react";
-import { updateHistory } from "@/database/history";
 import { MainContext } from "@/pages/Main";
 import { clipboardStore } from "@/stores/clipboard";
+import { updateHistory } from "@/sync"; // 使用带同步功能的包装器
 import type { DatabaseSchemaHistory } from "@/types/database";
 
 export interface NoteModalRef {

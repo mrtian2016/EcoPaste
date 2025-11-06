@@ -29,6 +29,7 @@
     "updater:default",
     "process:default",
     "macos-permissions:default",
+    "os:allow-hostname",
     "fs-pro:default",
     "locale:default",
     "opener:default",

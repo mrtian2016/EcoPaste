@@ -20,10 +20,12 @@ import { raf } from "@/utils/bom";
 import { isMac } from "@/utils/is";
 import { saveStore } from "@/utils/store";
 import About from "./components/About";
+import Backup from "./components/Backup";
 import Clipboard from "./components/Clipboard";
 import General from "./components/General";
 import History from "./components/History";
 import Shortcut from "./components/Shortcut";
+import Sync from "./components/Sync";
 
 const Preference = () => {
   const { t } = useTranslation();
@@ -85,12 +87,18 @@ const Preference = () => {
         key: "shortcut",
         label: t("preference.menu.title.shortcut"),
       },
-      // {
-      //   content: <Backup />,
-      //   icon: "i-lucide:database-backup",
-      //   key: "backup",
-      //   label: t("preference.menu.title.backup"),
-      // },
+      {
+        content: <Sync />,
+        icon: "i-lucide:cloud",
+        key: "sync",
+        label: t("preference.menu.title.sync"),
+      },
+      {
+        content: <Backup />,
+        icon: "i-lucide:database-backup",
+        key: "backup",
+        label: t("preference.menu.title.backup"),
+      },
       {
         content: <About />,
         icon: "i-lucide:info",

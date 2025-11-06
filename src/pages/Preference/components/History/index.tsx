@@ -1,9 +1,10 @@
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import ProList from "@/components/ProList";
-import { deleteHistory, selectHistory } from "@/database/history";
+import { selectHistory } from "@/database/history"; // selectHistory 不需要同步
 import { useImmediate } from "@/hooks/useImmediate";
 import { clipboardStore } from "@/stores/clipboard";
+import { deleteHistory } from "@/sync"; // 使用带同步功能的包装器
 import type { Interval } from "@/types/shared";
 import { dayjs } from "@/utils/dayjs";
 import Delete from "./components/Delete";

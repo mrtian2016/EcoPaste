@@ -253,7 +253,8 @@
         "clipboard": "剪貼簿",
         "general": "通用設定",
         "history": "歷史記錄",
-        "shortcut": "快捷鍵"
+        "shortcut": "快捷鍵",
+        "sync": "雲端同步"
       }
     },
     "settings": {

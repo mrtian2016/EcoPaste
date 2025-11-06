@@ -46,6 +46,12 @@ export const getDatabase = async () => {
     .addColumn("createTime", "text")
     .addColumn("note", "text")
     .addColumn("subtype", "text")
+    // 同步字段
+    .addColumn("device_id", "text")
+    .addColumn("device_name", "text")
+    .addColumn("content_hash", "text")
+    .addColumn("synced", "integer", (col) => col.defaultTo(0))
+    .addColumn("updated_at", "text")
     .execute();
 
   return db;
