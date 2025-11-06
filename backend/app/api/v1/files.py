@@ -43,7 +43,7 @@ async def upload_file(
     try:
         # 生成唯一文件名
         file_ext = Path(file.filename).suffix
-        unique_filename = f"{uuid.uuid4()}{file_ext}"
+        unique_filename = file.filename
         file_path = UPLOAD_DIR / unique_filename
         
         # 保存文件

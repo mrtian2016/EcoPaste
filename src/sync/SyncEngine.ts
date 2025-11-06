@@ -116,14 +116,18 @@ export class SyncEngine {
 
       // 如果是图片，需要先上传文件
       if (data.type === "image") {
-        LogInfo(`上传图片到服务器: ${JSON.stringify(data)}`);
-        // 如果是图片 需要拿到完整的文件地址 然后才能上传
+        LogInfo(`上传图片到服务器，原始数据: ${JSON.stringify(data)}`);
+        // 如果是图片 需要拼接完整路径
         const saveImagePath = await getDefaultSaveImagePath();
         const localFilePath = join(saveImagePath, data.value);
+        LogInfo(`图片完整路径: ${localFilePath}`);
+
         const { fileId, fileUrl, fileName } = await uploadFile(
           localFilePath,
           syncConfig.deviceId,
         );
+        LogInfo(`图片上传成功: fileId=${fileId}, fileName=${fileName}`);
+
         // 保存file_id、url和原始文件名（使用服务器返回的文件名）
         syncData.remote_file_id = fileId;
         syncData.remote_file_url = fileUrl;
