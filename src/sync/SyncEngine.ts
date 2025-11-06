@@ -295,6 +295,7 @@ export class SyncEngine {
       delete localData.remote_file_id;
       delete localData.remote_file_url;
       delete localData.remote_files;
+      delete localData.is_duplicate;
 
       // 写入本地数据库
       if (existing) {

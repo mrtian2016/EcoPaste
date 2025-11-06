@@ -95,6 +95,11 @@ export class SyncManager {
       syncState.lastSyncTime = new Date().toISOString();
       broadcastSyncState();
     });
+
+    // 心跳响应
+    this.wsClient.on("pong", (_message: WSServerMessage) => {
+      LogInfo("[SyncManager] 收到心跳响应 pong");
+    });
   }
 
   /**
@@ -247,6 +252,13 @@ export class SyncManager {
    */
   onTimestampUpdate(callback: (id: string, createTime: string) => void): void {
     this.onTimestampUpdated = callback;
+  }
+
+  async syncPending(): Promise<void> {
+    await this.wsClient.sendAndWait({
+      action: "sync_pending",
+      data: {},
+    });
   }
 }
 

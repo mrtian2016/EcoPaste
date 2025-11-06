@@ -54,6 +54,23 @@ def delete_file_if_exists(file_id: str) -> bool:
         return False
 
 
+def format_datetime_str(value: str) -> str:
+    """格式化时间字符串为 YYYY-MM-DD HH:MM:SS 格式（UTC+8）"""
+    if not value:
+        return value
+    try:
+        # 尝试解析 ISO 8601 格式
+        dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+        # 转换为 UTC+8 时区
+        from datetime import timezone, timedelta
+        dt_utc8 = dt.astimezone(timezone(timedelta(hours=8)))
+        # 格式化为指定格式
+        return dt_utc8.strftime('%Y-%m-%d %H:%M:%S')
+    except Exception:
+        # 如果解析失败，返回原值
+        return value
+
+
 @router.post("/", response_model=ClipboardItem, summary="添加剪贴板项")
 async def create_clipboard_item(
     item: ClipboardItemCreate,
@@ -100,7 +117,7 @@ async def create_clipboard_item(
                 "value": existing_item.value,
                 "device_id": existing_item.device_id,
                 "device_name": existing_item.device_name,
-                "createTime": existing_item.createTime,
+                "createTime": format_datetime_str(existing_item.createTime),
                 "is_duplicate": True  # 标记为重复内容
             }
 
@@ -155,7 +172,7 @@ async def create_clipboard_item(
             "value": db_item.value,
             "device_id": db_item.device_id,
             "device_name": db_item.device_name,
-            "createTime": db_item.createTime,
+            "createTime": format_datetime_str(db_item.createTime),
             "is_duplicate": False  # 新内容
         }
 
@@ -570,7 +587,7 @@ async def generate_test_clipboard(
                 "height": db_item.height,
                 "device_id": db_item.device_id,
                 "device_name": db_item.device_name,
-                "createTime": db_item.createTime,
+                "createTime": format_datetime_str(db_item.createTime),
                 "subtype": db_item.subtype,
                 "note": db_item.note,
                 "is_duplicate": False

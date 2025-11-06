@@ -1,8 +1,9 @@
 """
 Pydantic 数据模型定义（对齐前端 Schema）
 """
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic import BaseModel, Field, EmailStr, ConfigDict, field_serializer
 from typing import Optional
+from datetime import datetime, timezone, timedelta
 
 
 # ==================== 用户相关模型 ====================
@@ -32,6 +33,22 @@ class User(UserBase):
     created_at: str
     last_login: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
+    
+    @field_serializer('created_at', 'last_login')
+    def format_datetime(self, value: Optional[str]) -> Optional[str]:
+        """格式化时间字段为 YYYY-MM-DD HH:MM:SS 格式（UTC+8）"""
+        if not value:
+            return value
+        try:
+            # 尝试解析 ISO 8601 格式
+            dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            # 转换为 UTC+8 时区
+            dt_utc8 = dt.astimezone(timezone(timedelta(hours=8)))
+            # 格式化为指定格式
+            return dt_utc8.strftime('%Y-%m-%d %H:%M:%S')
+        except Exception:
+            # 如果解析失败，返回原值
+            return value
 
 
 class UserInDB(User):
@@ -90,6 +107,22 @@ class ClipboardItem(ClipboardItemBase):
     synced: int = 1
     updated_at: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
+    
+    @field_serializer('createTime', 'updated_at')
+    def format_datetime(self, value: Optional[str]) -> Optional[str]:
+        """格式化时间字段为 YYYY-MM-DD HH:MM:SS 格式（UTC+8）"""
+        if not value:
+            return value
+        try:
+            # 尝试解析 ISO 8601 格式
+            dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            # 转换为 UTC+8 时区
+            dt_utc8 = dt.astimezone(timezone(timedelta(hours=8)))
+            # 格式化为指定格式
+            return dt_utc8.strftime('%Y-%m-%d %H:%M:%S')
+        except Exception:
+            # 如果解析失败，返回原值
+            return value
 
 
 class DeviceBase(BaseModel):
@@ -108,6 +141,22 @@ class Device(DeviceBase):
     last_online: Optional[str] = None
     created_at: str
     model_config = ConfigDict(from_attributes=True)
+    
+    @field_serializer('created_at', 'last_online')
+    def format_datetime(self, value: Optional[str]) -> Optional[str]:
+        """格式化时间字段为 YYYY-MM-DD HH:MM:SS 格式（UTC+8）"""
+        if not value:
+            return value
+        try:
+            # 尝试解析 ISO 8601 格式
+            dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            # 转换为 UTC+8 时区
+            dt_utc8 = dt.astimezone(timezone(timedelta(hours=8)))
+            # 格式化为指定格式
+            return dt_utc8.strftime('%Y-%m-%d %H:%M:%S')
+        except Exception:
+            # 如果解析失败，返回原值
+            return value
 
 
 # ==================== WebSocket 消息模型 ====================

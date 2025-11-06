@@ -81,8 +81,8 @@ export const syncConfig = proxy<SyncConfig>({
     return cached && cached !== "Unknown Device" ? cached : "Loading...";
   })(),
   enabled: getSyncEnabled(),
-  heartbeatInterval: 30000,
-  reconnectInterval: 5000,
+  heartbeatInterval: 5000,
+  reconnectInterval: 3000,
   serverUrl: getWebSocketUrl(getServerUrl()),
   token: localStorage.getItem("eco_sync_token"),
 });

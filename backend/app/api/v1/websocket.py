@@ -3,6 +3,7 @@ WebSocket API 路由（对齐前端 Schema，实现所有同步操作）
 """
 import hashlib
 from pathlib import Path
+from datetime import datetime
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, status
 from sqlalchemy import select, delete, func
 from loguru import logger
@@ -30,6 +31,23 @@ def delete_file_if_exists(file_id: str) -> bool:
     except Exception as e:
         logger.warning(f"删除文件失败: {file_id}, {e}")
         return False
+
+
+def format_datetime_str(value: str) -> str:
+    """格式化时间字符串为 YYYY-MM-DD HH:MM:SS 格式（UTC+8）"""
+    if not value:
+        return value
+    try:
+        # 尝试解析 ISO 8601 格式
+        dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+        # 转换为 UTC+8 时区
+        from datetime import timezone, timedelta
+        dt_utc8 = dt.astimezone(timezone(timedelta(hours=8)))
+        # 格式化为指定格式
+        return dt_utc8.strftime('%Y-%m-%d %H:%M:%S')
+    except Exception:
+        # 如果解析失败，返回原值
+        return value
 
 
 async def verify_websocket_token(token: str) -> DBUser:
@@ -446,14 +464,14 @@ async def handle_fetch_history(websocket, payload, user, message_id):
                 "width": item.width,
                 "height": item.height,
                 "favorite": item.favorite,
-                "createTime": item.createTime,
+                "createTime": format_datetime_str(item.createTime),
                 "note": item.note,
                 "subtype": item.subtype,
                 "device_id": item.device_id,
                 "device_name": item.device_name,
                 "content_hash": item.content_hash,
                 "synced": item.synced,
-                "updated_at": item.updated_at,
+                "updated_at": format_datetime_str(item.updated_at) if item.updated_at else None,
             }
             for item in items
         ]
