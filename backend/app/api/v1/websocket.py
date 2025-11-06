@@ -227,10 +227,10 @@ async def handle_sync_clipboard(websocket, payload, user, device_id, message_id)
                 user_id=user.id
             )
         else:
-            # 过滤掉前端特有的字段
+            # 过滤掉前端特有的字段（不存储到数据库）
             filtered_payload = {
                 k: v for k, v in payload.items()
-                if k not in ('remote_files', 'remote_file_id', 'remote_file_url', 'is_duplicate')
+                if k not in ('remote_files', 'remote_file_id', 'remote_file_url', 'remote_file_name', 'is_duplicate')
             }
 
             # 对于文件列表，将remote_files的内容存储到value字段

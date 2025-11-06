@@ -305,6 +305,7 @@ export class SyncEngine {
       // 移除远程特有字段，避免插入数据库时出错
       delete localData.remote_file_id;
       delete localData.remote_file_url;
+      delete localData.remote_file_name;
       delete localData.remote_files;
       delete localData.is_duplicate;
 
