@@ -151,14 +151,13 @@ class ConnectionManager:
             source_device_id: 源设备ID
             user_id: 用户ID（只广播给该用户的设备）
         """
-        message = {
-            "type": "clipboard_sync",
-            "data": clipboard_data,
-            "source_device_id": source_device_id,
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        await self.broadcast(message, exclude_device=source_device_id, user_id=user_id)
+        # 使用统一的数据结构，和队列消费者保持一致
+        await self.broadcast_system_message(
+            message_type="clipboard_sync",
+            data={"clipboard_item": clipboard_data},
+            exclude_device=source_device_id,
+            user_id=user_id
+        )
         
         # 计算实际发送的设备数
         target_count = self._get_user_device_count(user_id) - 1 if user_id else len(self.active_connections) - 1

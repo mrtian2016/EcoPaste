@@ -121,9 +121,14 @@ async def create_clipboard_item(
                 "is_duplicate": True  # 标记为重复内容
             }
 
-            # 对于文件类型，添加下载URL
-            if existing_item.type in ["image", "files"] and existing_item.value:
-                clipboard_data["file_url"] = f"/api/v1/files/download/{existing_item.value}"
+            # 对于图片类型，添加下载字段
+            if existing_item.type == "image" and existing_item.value:
+                clipboard_data["remote_file_id"] = existing_item.value
+                clipboard_data["remote_file_url"] = f"/api/v1/files/download/{existing_item.value}"
+            
+            # 对于文件列表类型，添加remote_files
+            if existing_item.type == "files" and existing_item.value:
+                clipboard_data["remote_files"] = existing_item.value
 
             # 推送到队列进行广播（通知时间戳更新）
             await manager.push_to_queue(
@@ -176,9 +181,16 @@ async def create_clipboard_item(
             "is_duplicate": False  # 新内容
         }
 
-        # 对于文件类型，添加下载URL
-        if db_item.type in ["image", "files"] and db_item.value:
-            clipboard_data["file_url"] = f"/api/v1/files/download/{db_item.value}"
+        # 对于图片类型，添加下载字段
+        if db_item.type == "image" and db_item.value:
+            # value存储的是file_id
+            clipboard_data["remote_file_id"] = db_item.value
+            clipboard_data["remote_file_url"] = f"/api/v1/files/download/{db_item.value}"
+        
+        # 对于文件列表类型，添加remote_files
+        if db_item.type == "files" and db_item.value:
+            # value存储的是remote_files的JSON字符串
+            clipboard_data["remote_files"] = db_item.value
 
         # 推送到队列进行广播
         await manager.push_to_queue(

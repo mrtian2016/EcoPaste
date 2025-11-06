@@ -233,6 +233,16 @@ async def handle_sync_clipboard(websocket, payload, user, device_id, message_id)
                 if k not in ('remote_files', 'remote_file_id', 'remote_file_url', 'is_duplicate')
             }
 
+            # 对于文件列表，将remote_files的内容存储到value字段
+            if payload.get('type') == 'files' and payload.get('remote_files'):
+                filtered_payload['value'] = payload.get('remote_files')
+                logger.info(f"[WS] 文件列表类型，使用remote_files作为value: {filtered_payload['value']}")
+
+            # 对于图片，将remote_file_id存储到value字段
+            if payload.get('type') == 'image' and payload.get('remote_file_id'):
+                filtered_payload['value'] = payload.get('remote_file_id')
+                logger.info(f"[WS] 图片类型，使用remote_file_id作为value: {filtered_payload['value']}")
+
             # 插入新记录（字段名完全对齐前端）
             db_item = ClipboardHistory(
                 **filtered_payload,
@@ -254,8 +264,46 @@ async def handle_sync_clipboard(websocket, payload, user, device_id, message_id)
                 }
             })
 
+            # 准备广播数据，为图片和文件类型添加下载字段
+            broadcast_data = {
+                "id": db_item.id,
+                "type": db_item.type,
+                "group": db_item.group,
+                "value": db_item.value,  # 对于图片和文件，这里已经是file_id或file_id列表
+                "search": db_item.search,
+                "count": db_item.count,
+                "width": db_item.width,
+                "height": db_item.height,
+                "favorite": db_item.favorite,
+                "createTime": format_datetime_str(db_item.createTime),
+                "note": db_item.note,
+                "subtype": db_item.subtype,
+                "device_id": db_item.device_id,
+                "device_name": db_item.device_name,
+                "content_hash": db_item.content_hash,
+                "synced": db_item.synced,
+                "updated_at": format_datetime_str(db_item.updated_at) if db_item.updated_at else None,
+            }
+
+            # 对于图片类型，添加下载URL和原始文件名
+            if db_item.type == "image" and db_item.value:
+                # value存储的就是file_id
+                file_id = db_item.value
+                broadcast_data["remote_file_id"] = file_id
+                broadcast_data["remote_file_url"] = f"/api/v1/files/download/{file_id}"
+                # 如果payload中包含原始文件名，也传递过去
+                if payload.get('remote_file_name'):
+                    broadcast_data["remote_file_name"] = payload.get('remote_file_name')
+                logger.info(f"[WS] 图片广播: file_id={file_id}, file_name={broadcast_data.get('remote_file_name')}")
+
+            # 对于文件列表类型，添加remote_files
+            if db_item.type == "files" and db_item.value:
+                # value存储的就是remote_files的JSON字符串
+                broadcast_data["remote_files"] = db_item.value
+                logger.info(f"[WS] 文件列表广播: remote_files={db_item.value}")
+
             # 广播给其他设备
-            await manager.broadcast_clipboard(payload, device_id, user_id=user.id)
+            await manager.broadcast_clipboard(broadcast_data, device_id, user_id=user.id)
 
 
 async def handle_delete_clipboard(websocket, payload, user, device_id, message_id):

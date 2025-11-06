@@ -116,14 +116,18 @@ export class SyncEngine {
 
       // 如果是图片，需要先上传文件
       if (data.type === "image") {
-        LogInfo(`上传图片到服务器: ${data.value}`);
-        const { fileId, fileUrl } = await uploadFile(
-          data.value,
+        LogInfo(`上传图片到服务器: ${JSON.stringify(data)}`);
+        // 如果是图片 需要拿到完整的文件地址 然后才能上传
+        const saveImagePath = await getDefaultSaveImagePath();
+        const localFilePath = join(saveImagePath, data.value);
+        const { fileId, fileUrl, fileName } = await uploadFile(
+          localFilePath,
           syncConfig.deviceId,
         );
-        // 替换 value 为服务器文件 ID
+        // 保存file_id、url和原始文件名（使用服务器返回的文件名）
         syncData.remote_file_id = fileId;
         syncData.remote_file_url = fileUrl;
+        syncData.remote_file_name = fileName; // 使用服务器返回的原始文件名
       }
 
       // 如果是文件列表，需要上传每个文件
@@ -133,13 +137,15 @@ export class SyncEngine {
         const uploadedFiles = [];
 
         for (const filePath of files) {
-          const { fileId, fileUrl } = await uploadFile(
+          const { fileId, fileUrl, fileName } = await uploadFile(
             filePath,
             syncConfig.deviceId,
           );
+          // 使用服务器返回的原始文件名
           uploadedFiles.push({
             file_id: fileId,
             file_url: fileUrl,
+            original_name: fileName, // 使用服务器返回的文件名
             original_path: filePath,
           });
         }
@@ -259,14 +265,17 @@ export class SyncEngine {
       // 如果是图片，下载到本地
       if (remoteData.type === "image" && localData.remote_file_id) {
         const saveImagePath = await getDefaultSaveImagePath();
-        const fileName = `${(remoteData as any).remote_file_id}`;
+        // 使用原始文件名，如果没有则使用file_id
+        const fileName =
+          (remoteData as any).remote_file_name ||
+          (remoteData as any).remote_file_id;
         const localPath = join(saveImagePath, fileName);
 
-        LogInfo(`下载远程图片: ${localPath}`);
+        LogInfo(`下载远程图片: ${fileName} -> ${localPath}`);
 
         await downloadFile((remoteData as any).remote_file_id, localPath);
 
-        // 使用本地路径
+        // 使用本地路径（只保存文件名）
         localData.value = fileName;
       }
 
@@ -279,9 +288,11 @@ export class SyncEngine {
         const downloadPath = await downloadDir();
 
         for (const remoteFile of remoteFiles) {
-          const localPath = join(downloadPath, remoteFile.file_id);
+          // 使用原始文件名，如果没有则使用file_id
+          const fileName = remoteFile.original_name || remoteFile.file_id;
+          const localPath = join(downloadPath, fileName);
 
-          LogInfo(`下载远程文件: ${localPath}`);
+          LogInfo(`下载远程文件: ${fileName} -> ${localPath}`);
 
           await downloadFile(remoteFile.file_id, localPath);
           localFiles.push(localPath);

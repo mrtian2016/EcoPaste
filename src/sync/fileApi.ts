@@ -9,7 +9,7 @@ import { getHttpServerUrl, syncConfig } from "./syncStore";
 export async function uploadFile(
   filePath: string,
   deviceId?: string,
-): Promise<{ fileId: string; fileUrl: string }> {
+): Promise<{ fileId: string; fileUrl: string; fileName: string }> {
   const baseUrl = getHttpServerUrl();
 
   if (!syncConfig.token) {
@@ -47,6 +47,7 @@ export async function uploadFile(
 
   return {
     fileId: result.data.file_id,
+    fileName: result.data.file_name, // 服务器返回的原始文件名
     fileUrl: result.data.file_url,
   };
 }
