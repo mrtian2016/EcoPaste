@@ -71,18 +71,64 @@ def format_datetime_str(value: str) -> str:
         return value
 
 
+def calculate_content_hash(item_type: str, value: str) -> str:
+    """
+    计算内容哈希
+    - 对于图片和文件类型：使用文件内容计算哈希
+    - 对于文本类型：使用文本内容计算哈希
+    """
+    # 对于图片类型，读取文件内容计算哈希
+    if item_type == "image":
+        try:
+            file_path = UPLOAD_DIR / value
+            if file_path.exists():
+                with open(file_path, "rb") as f:
+                    file_content = f.read()
+                    return hashlib.sha256(file_content).hexdigest()
+            else:
+                logger.warning(f"图片文件不存在，使用文件名计算哈希: {value}")
+        except Exception as e:
+            logger.error(f"读取图片文件失败，使用文件名计算哈希: {e}")
+
+    # 对于文件列表类型，计算所有文件内容的联合哈希
+    if item_type == "files":
+        try:
+            import json
+            remote_files = json.loads(value)
+            file_hashes = []
+
+            for file_info in remote_files:
+                file_id = file_info.get("file_id")
+                if file_id:
+                    file_path = UPLOAD_DIR / file_id
+                    if file_path.exists():
+                        with open(file_path, "rb") as f:
+                            file_content = f.read()
+                            file_hash = hashlib.sha256(file_content).hexdigest()
+                            file_hashes.append(file_hash)
+
+            if file_hashes:
+                # 将所有文件哈希组合后再次哈希
+                combined_hash = ":".join(file_hashes)
+                return hashlib.sha256(combined_hash.encode('utf-8')).hexdigest()
+        except Exception as e:
+            logger.error(f"计算文件列表哈希失败，使用值计算哈希: {e}")
+
+    # 对于文本类型，使用文本内容计算哈希
+    return hashlib.sha256(f"{item_type}:{value}".encode('utf-8')).hexdigest()
+
+
 @router.post("/", response_model=ClipboardItem, summary="添加剪贴板项")
 async def create_clipboard_item(
     item: ClipboardItemCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: DBUser = Depends(get_current_active_user)
+    current_user: DBUser = Depends(get_current_active_user),
+    remote_file_name: Optional[str] = Body(None, description="原始文件名（用于图片和文件类型）")
 ):
     """添加新的剪贴板历史记录（需要认证，支持去重）"""
     try:
         # 计算内容哈希（用于去重）
-        content_hash = hashlib.sha256(
-            f"{item.type}:{item.value}".encode('utf-8')
-        ).hexdigest()
+        content_hash = calculate_content_hash(item.type, item.value)
 
         # 检查是否存在相同内容（基于 hash）
         result = await db.execute(
@@ -121,10 +167,12 @@ async def create_clipboard_item(
                 "is_duplicate": True  # 标记为重复内容
             }
 
-            # 对于图片类型，添加下载字段
+            # 对于图片类型，添加下载字段和原始文件名
             if existing_item.type == "image" and existing_item.value:
                 clipboard_data["remote_file_id"] = existing_item.value
                 clipboard_data["remote_file_url"] = f"/api/v1/files/download/{existing_item.value}"
+                if existing_item.file_name:
+                    clipboard_data["remote_file_name"] = existing_item.file_name
             
             # 对于文件列表类型，添加remote_files
             if existing_item.type == "files" and existing_item.value:
@@ -181,11 +229,13 @@ async def create_clipboard_item(
             "is_duplicate": False  # 新内容
         }
 
-        # 对于图片类型，添加下载字段
+        # 对于图片类型，添加下载字段和原始文件名
         if db_item.type == "image" and db_item.value:
             # value存储的是file_id
             clipboard_data["remote_file_id"] = db_item.value
             clipboard_data["remote_file_url"] = f"/api/v1/files/download/{db_item.value}"
+            if db_item.file_name:
+                clipboard_data["remote_file_name"] = db_item.file_name
         
         # 对于文件列表类型，添加remote_files
         if db_item.type == "files" and db_item.value:
@@ -803,11 +853,12 @@ async def fetch_sync_updates(
                 "updated_at": format_datetime_str(item.updated_at) if item.updated_at else None,
             }
             
-            # 对于图片类型，添加下载字段
+            # 对于图片类型，添加下载字段和原始文件名
             if item.type == "image" and item.value:
                 item_data["remote_file_id"] = item.value
                 item_data["remote_file_url"] = f"/api/v1/files/download/{item.value}"
-                item_data["remote_file_name"] = item.value
+                if item.file_name:
+                    item_data["remote_file_name"] = item.file_name
             
             # 对于文件列表类型，添加 remote_files
             if item.type == "files" and item.value:

@@ -41,11 +41,11 @@ async def upload_file(
         文件信息和访问URL
     """
     try:
-        # 生成唯一文件名
+        # 生成唯一文件ID (使用UUID) + 原始扩展名
         file_ext = Path(file.filename).suffix
-        unique_filename = file.filename
-        file_path = UPLOAD_DIR / unique_filename
-        
+        unique_file_id = f"{uuid.uuid4()}{file_ext}"
+        file_path = UPLOAD_DIR / unique_file_id
+
         # 保存文件
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -55,17 +55,17 @@ async def upload_file(
         
         # 获取 MIME 类型
         mime_type = file.content_type or mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
-        
-        logger.info(f"文件上传成功: {file.filename} -> {unique_filename} ({file_size} bytes)")
-        
+
+        logger.info(f"文件上传成功: {file.filename} -> {unique_file_id} ({file_size} bytes)")
+
         return {
             "success": True,
             "data": {
-                "file_id": unique_filename,
+                "file_id": unique_file_id,
                 "file_name": file.filename,
                 "file_size": file_size,
                 "mime_type": mime_type,
-                "file_url": f"/api/v1/files/download/{unique_filename}",
+                "file_url": f"/api/v1/files/download/{unique_file_id}",
                 "content_type": "image" if mime_type.startswith("image/") else "file"
             }
         }

@@ -185,17 +185,69 @@ async def websocket_endpoint(
 
 # ===== 处理函数 =====
 
+def calculate_file_content_hash(item_type: str, value: str) -> str:
+    """
+    计算内容哈希（WebSocket版本）
+    - 对于图片和文件类型：使用文件内容计算哈希
+    - 对于文本类型：使用文本内容计算哈希
+    """
+    # 对于图片类型，读取文件内容计算哈希
+    if item_type == "image":
+        try:
+            file_path = UPLOAD_DIR / value
+            if file_path.exists():
+                with open(file_path, "rb") as f:
+                    file_content = f.read()
+                    return hashlib.sha256(file_content).hexdigest()
+            else:
+                logger.warning(f"图片文件不存在，使用文件名计算哈希: {value}")
+        except Exception as e:
+            logger.error(f"读取图片文件失败，使用文件名计算哈希: {e}")
+
+    # 对于文件列表类型，计算所有文件内容的联合哈希
+    if item_type == "files":
+        try:
+            import json
+            remote_files = json.loads(value)
+            file_hashes = []
+
+            for file_info in remote_files:
+                file_id = file_info.get("file_id")
+                if file_id:
+                    file_path = UPLOAD_DIR / file_id
+                    if file_path.exists():
+                        with open(file_path, "rb") as f:
+                            file_content = f.read()
+                            file_hash = hashlib.sha256(file_content).hexdigest()
+                            file_hashes.append(file_hash)
+
+            if file_hashes:
+                # 将所有文件哈希组合后再次哈希
+                combined_hash = ":".join(file_hashes)
+                return hashlib.sha256(combined_hash.encode('utf-8')).hexdigest()
+        except Exception as e:
+            logger.error(f"计算文件列表哈希失败，使用值计算哈希: {e}")
+
+    # 对于文本类型，使用文本内容计算哈希
+    return hashlib.sha256(f"{item_type}:{value}".encode('utf-8')).hexdigest()
+
+
 async def handle_sync_clipboard(websocket, payload, user, device_id, message_id):
     """处理剪贴板同步（对齐前端字段名）"""
     if not db.async_session_maker:
         db.init_engine()
 
-    # 计算哈希
+    # 先处理文件字段，将remote_file_id或remote_files存储到value
+    value_for_hash = payload.get('value')
+    if payload.get('type') == 'image' and payload.get('remote_file_id'):
+        value_for_hash = payload.get('remote_file_id')
+    elif payload.get('type') == 'files' and payload.get('remote_files'):
+        value_for_hash = payload.get('remote_files')
+
+    # 计算哈希（使用文件内容而非文件名）
     content_hash = payload.get("content_hash")
     if not content_hash:
-        content_hash = hashlib.sha256(
-            f"{payload['type']}:{payload['value']}".encode()
-        ).hexdigest()
+        content_hash = calculate_file_content_hash(payload['type'], value_for_hash)
         payload["content_hash"] = content_hash
 
     async with db.async_session_maker() as session:
@@ -238,10 +290,12 @@ async def handle_sync_clipboard(websocket, payload, user, device_id, message_id)
                 filtered_payload['value'] = payload.get('remote_files')
                 logger.info(f"[WS] 文件列表类型，使用remote_files作为value: {filtered_payload['value']}")
 
-            # 对于图片，将remote_file_id存储到value字段
+            # 对于图片，将remote_file_id存储到value字段，原始文件名存储到file_name字段
             if payload.get('type') == 'image' and payload.get('remote_file_id'):
                 filtered_payload['value'] = payload.get('remote_file_id')
-                logger.info(f"[WS] 图片类型，使用remote_file_id作为value: {filtered_payload['value']}")
+                if payload.get('remote_file_name'):
+                    filtered_payload['file_name'] = payload.get('remote_file_name')
+                logger.info(f"[WS] 图片类型，file_id={filtered_payload['value']}, file_name={filtered_payload.get('file_name')}")
 
             # 插入新记录（字段名完全对齐前端）
             db_item = ClipboardHistory(
@@ -291,9 +345,9 @@ async def handle_sync_clipboard(websocket, payload, user, device_id, message_id)
                 file_id = db_item.value
                 broadcast_data["remote_file_id"] = file_id
                 broadcast_data["remote_file_url"] = f"/api/v1/files/download/{file_id}"
-                # 如果payload中包含原始文件名，也传递过去
-                if payload.get('remote_file_name'):
-                    broadcast_data["remote_file_name"] = payload.get('remote_file_name')
+                # 从数据库获取原始文件名
+                if db_item.file_name:
+                    broadcast_data["remote_file_name"] = db_item.file_name
                 logger.info(f"[WS] 图片广播: file_id={file_id}, file_name={broadcast_data.get('remote_file_name')}")
 
             # 对于文件列表类型，添加remote_files
@@ -523,12 +577,13 @@ async def handle_fetch_history(websocket, payload, user, message_id):
                 "updated_at": format_datetime_str(item.updated_at) if item.updated_at else None,
             }
             
-            # 对于图片类型，添加下载字段
+            # 对于图片类型，添加下载字段和原始文件名
             if item.type == "image" and item.value:
                 item_data["remote_file_id"] = item.value
                 item_data["remote_file_url"] = f"/api/v1/files/download/{item.value}"
-                # 如果有原始文件名，也添加进去（通常 file_id 本身就包含扩展名）
-                item_data["remote_file_name"] = item.value
+                # 从数据库获取原始文件名
+                if item.file_name:
+                    item_data["remote_file_name"] = item.file_name
             
             # 对于文件列表类型，添加 remote_files
             if item.type == "files" and item.value:

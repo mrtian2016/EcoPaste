@@ -65,6 +65,7 @@ class ClipboardHistory(Base):
     content_hash: Mapped[Optional[str]] = mapped_column(String(64), comment="内容哈希 SHA256")
     synced: Mapped[int] = mapped_column(Integer, default=1, nullable=False, comment="是否已同步 0/1")
     updated_at: Mapped[Optional[str]] = mapped_column(String(50), comment="最后更新时间 ISO 8601")
+    file_name: Mapped[Optional[str]] = mapped_column(String(255), comment="原始文件名（用于图片和文件类型）")
 
     # 索引
     __table_args__ = (
