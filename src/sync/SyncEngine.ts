@@ -3,6 +3,7 @@
  */
 
 import { emit } from "@tauri-apps/api/event";
+import { exists, mkdir } from "@tauri-apps/plugin-fs";
 import {
   attachConsole,
   error as LogError,
@@ -348,8 +349,12 @@ export class SyncEngine {
         const remoteFiles = JSON.parse((remoteData as any).remote_files);
         const localFiles = [];
 
-        const { downloadDir } = await import("@tauri-apps/api/path");
-        const downloadPath = await downloadDir();
+        const { appLocalDataDir } = await import("@tauri-apps/api/path");
+        const localDataDir = await appLocalDataDir();
+        const downloadPath = join(localDataDir, "files");
+        if (!(await exists(downloadPath))) {
+          await mkdir(downloadPath);
+        }
 
         for (const remoteFile of remoteFiles) {
           // 使用原始文件名，如果没有则使用file_id
