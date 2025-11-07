@@ -363,7 +363,7 @@ export class SyncEngine {
         }
 
         // 使用本地路径列表
-        localData.value = JSON.stringify(localFiles);
+        localData.value = localFiles;
       }
 
       // 移除远程特有字段，避免插入数据库时出错
@@ -443,6 +443,12 @@ export class SyncEngine {
     data: DatabaseSchemaHistory,
   ): Promise<void> {
     try {
+      if (data.type === "image") {
+        // 获取完整路径
+        const saveImagePath = await getDefaultSaveImagePath();
+        const localPath = join(saveImagePath, data.value);
+        data.value = localPath;
+      }
       await writeToClipboard(data);
       LogInfo(`已写入系统剪贴板: ${data.type}`);
     } catch (error) {
