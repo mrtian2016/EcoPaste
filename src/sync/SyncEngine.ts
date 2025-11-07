@@ -331,17 +331,27 @@ export class SyncEngine {
       if (remoteData.type === "image" && localData.remote_file_id) {
         const saveImagePath = await getDefaultSaveImagePath();
         // 使用原始文件名，如果没有则使用file_id
-        const fileName =
+        const originalFileName =
           (remoteData as any).remote_file_name ||
           (remoteData as any).remote_file_id;
-        const localPath = join(saveImagePath, fileName);
 
-        LogInfo(`下载远程图片: ${fileName} -> ${localPath}`);
+        // 获取唯一的文件路径（自动处理重名）
+        const { getUniqueFilePath } = await import("./utils/file");
+        const { filePath: localPath, fileName: uniqueFileName } =
+          await getUniqueFilePath(
+            saveImagePath,
+            originalFileName,
+            (remoteData as any).content_hash,
+          );
+
+        LogInfo(
+          `下载远程图片: ${originalFileName} -> ${uniqueFileName} (${localPath})`,
+        );
 
         await downloadFile((remoteData as any).remote_file_id, localPath);
 
-        // 使用本地路径（只保存文件名）
-        localData.value = fileName;
+        // 使用最终的文件名（可能已重命名）
+        localData.value = uniqueFileName;
       }
 
       // 如果是文件列表，下载所有文件
@@ -356,12 +366,22 @@ export class SyncEngine {
           await mkdir(downloadPath);
         }
 
+        // 导入文件处理工具
+        const { getUniqueFilePath } = await import("./utils/file");
+
         for (const remoteFile of remoteFiles) {
           // 使用原始文件名，如果没有则使用file_id
-          const fileName = remoteFile.original_name || remoteFile.file_id;
-          const localPath = join(downloadPath, fileName);
+          const originalFileName =
+            remoteFile.original_name || remoteFile.file_id;
 
-          LogInfo(`下载远程文件: ${fileName} -> ${localPath}`);
+          // 获取唯一的文件路径（自动处理重名）
+          // 注意:文件列表的哈希是组合的,这里不传递哈希值
+          const { filePath: localPath, fileName: uniqueFileName } =
+            await getUniqueFilePath(downloadPath, originalFileName);
+
+          LogInfo(
+            `下载远程文件: ${originalFileName} -> ${uniqueFileName} (${localPath})`,
+          );
 
           await downloadFile(remoteFile.file_id, localPath);
           localFiles.push(localPath);
