@@ -24,6 +24,8 @@ import { calculateHash } from "./utils/hash";
 export const insertHistory = async (
   data: DatabaseSchemaHistory,
 ): Promise<void> => {
+  // console.log(`[insertHistory] 收到插入请求: ${data.id}, type: ${data.type}`);
+
   // 添加同步字段
   const itemWithSync: any = {
     ...data,

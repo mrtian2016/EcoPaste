@@ -13,6 +13,7 @@ import type { State } from "@/pages/Main";
 import { getClipboardTextSubtype } from "@/plugins/clipboard";
 import { clipboardStore } from "@/stores/clipboard";
 import { insertHistory, updateHistory } from "@/sync"; // 使用带同步功能的包装器
+import { SyncEngine } from "@/sync/SyncEngine";
 import type { DatabaseSchemaHistory } from "@/types/database";
 import { formatDate } from "@/utils/dayjs";
 
@@ -24,6 +25,12 @@ export const useClipboard = (
     await startListening();
 
     onClipboardChange(async (result) => {
+      // 如果是同步引擎写入的剪贴板，跳过处理，防止重复上传
+      if (SyncEngine.isWritingSyncClipboard()) {
+        // console.log("[useClipboard] 跳过同步引擎写入的剪贴板");
+        return;
+      }
+
       const { files, image, html, rtf, text } = result;
 
       if (isEmpty(result) || Object.values(result).every(isEmpty)) return;

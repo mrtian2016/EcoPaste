@@ -25,6 +25,9 @@ import { calculateHash } from "./utils/hash";
 // 用于标记正在处理远程同步的数据，防止重复上传
 const syncingFromRemote = new Set<string>();
 
+// 用于标记正在写入同步的剪贴板，防止剪贴板监听触发重复插入
+let isWritingSyncClipboard = false;
+
 export class SyncEngine {
   private enabled = false;
   private isSyncing = false; // 防止并发同步
@@ -73,6 +76,13 @@ export class SyncEngine {
    */
   isEnabled(): boolean {
     return this.enabled && syncState.status === "connected";
+  }
+
+  /**
+   * 检查是否正在写入同步的剪贴板
+   */
+  static isWritingSyncClipboard(): boolean {
+    return isWritingSyncClipboard;
   }
 
   /**
@@ -156,9 +166,11 @@ export class SyncEngine {
       return;
     }
 
+    LogInfo(`[syncInsert] 收到插入请求: ${data.id}, type: ${data.type}`);
+
     // 检查是否是远程同步的数据，避免重复上传
     if (syncingFromRemote.has(data.id)) {
-      LogInfo(`跳过远程同步的数据: ${data.id}`);
+      LogInfo(`[syncInsert] 跳过远程同步的数据: ${data.id}`);
       return;
     }
 
@@ -299,6 +311,11 @@ export class SyncEngine {
 
     // 标记为远程同步数据，防止重复上传
     syncingFromRemote.add(remoteData.id);
+    // 标记正在写入同步的剪贴板，防止剪贴板监听触发
+    isWritingSyncClipboard = true;
+    LogInfo(
+      `[handleRemoteSync] 开始处理远程同步: ${remoteData.id}, type: ${remoteData.type}, isWritingSyncClipboard: true`,
+    );
 
     try {
       // 检查本地是否已存在
@@ -315,6 +332,12 @@ export class SyncEngine {
 
         if (remoteTime <= localTime) {
           LogInfo(`本地数据更新，跳过: ${remoteData.id}`);
+          // 提前返回前清除标记
+          syncingFromRemote.delete(remoteData.id);
+          isWritingSyncClipboard = false;
+          LogInfo(
+            `[handleRemoteSync] 提前返回清除标记: ${remoteData.id}, isWritingSyncClipboard: false`,
+          );
           return;
         }
       }
@@ -422,6 +445,10 @@ export class SyncEngine {
       // 延迟移除标记，避免立即触发同步
       setTimeout(() => {
         syncingFromRemote.delete(remoteData.id);
+        isWritingSyncClipboard = false;
+        LogInfo(
+          `[handleRemoteSync] 清除标记: ${remoteData.id}, isWritingSyncClipboard: false`,
+        );
       }, 1000);
     }
   }

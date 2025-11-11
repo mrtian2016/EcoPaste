@@ -263,7 +263,7 @@ async def handle_sync_clipboard(websocket, payload, user, device_id, message_id)
         if existing:
             # 更新时间戳
             existing.createTime = payload.get("createTime")
-            existing.updated_at = payload.get("updated_at")
+            # existing.updated_at = payload.get("updated_at")
             await session.commit()
 
             await websocket.send_json({
