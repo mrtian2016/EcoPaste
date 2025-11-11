@@ -68,6 +68,7 @@ export interface ClipboardListParams {
   device_id?: string;
   favorite?: boolean;
   search?: string;
+  type?: "text" | "html" | "rtf" | "image" | "files"; // 类型筛选
 }
 
 export interface ApiResponse {

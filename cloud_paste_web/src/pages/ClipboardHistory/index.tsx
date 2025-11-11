@@ -49,12 +49,12 @@ const ClipboardHistory = () => {
     setGroup(newGroup);
 
     if (newGroup === "favorite") {
-      setParams({ ...params, favorite: true, page: 1 });
+      setParams({ ...params, favorite: true, page: 1, type: undefined });
     } else if (newGroup === "all") {
-      setParams({ ...params, favorite: undefined, page: 1 });
+      setParams({ ...params, favorite: undefined, page: 1, type: undefined });
     } else {
-      // TODO: 添加类型筛选
-      setParams({ ...params, favorite: undefined, page: 1 });
+      // 根据分组类型设置 type 参数
+      setParams({ ...params, favorite: undefined, page: 1, type: newGroup });
     }
   };
 

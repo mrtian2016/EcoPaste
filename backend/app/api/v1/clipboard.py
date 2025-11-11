@@ -312,6 +312,7 @@ async def get_clipboard_list(
     device_id: Optional[str] = Query(None, description="设备ID筛选"),
     favorite: Optional[bool] = Query(None, description="是否只显示收藏"),
     search: Optional[str] = Query(None, description="搜索内容"),
+    type: Optional[str] = Query(None, description="类型筛选: text/html/rtf/image/files"),
     db: AsyncSession = Depends(get_db),
     current_user: DBUser = Depends(get_current_active_user)
 ):
@@ -326,6 +327,9 @@ async def get_clipboard_list(
 
         if favorite is not None:
             query = query.where(ClipboardHistory.favorite == favorite)
+
+        if type:
+            query = query.where(ClipboardHistory.type == type)
 
         if search:
             query = query.where(
