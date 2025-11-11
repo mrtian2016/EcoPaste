@@ -73,9 +73,9 @@ const ClipboardHistory = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-color-2 px-3 py-6 md:px-0">
+      <div className="h-[100dvh] overflow-hidden bg-color-2">
         <Flex
-          className="mx-auto h-[calc(100vh-3rem)] max-w-2xl rounded-lg bg-color-1 py-3 shadow-lg"
+          className="mx-auto h-[100dvh] max-w-2xl bg-color-1 py-3 shadow-lg md:h-[calc(100vh-3rem)] md:rounded-lg"
           gap={12}
           vertical
         >
@@ -86,7 +86,7 @@ const ClipboardHistory = () => {
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="搜索剪贴板内容..."
               prefix={<UnoIcon name="i-lucide:search" />}
-              size="small"
+              size="large"
               value={searchText}
             />
           </div>
@@ -136,7 +136,7 @@ const ClipboardHistory = () => {
             <Scrollbar className="flex-1" offsetX={3}>
               <Spin spinning={isLoading}>
                 {data?.items && data.items.length > 0 ? (
-                  <div>
+                  <div className="pb-20">
                     {data.items.map((item, index) => (
                       <div className={index !== 0 ? "pt-3" : ""} key={item.id}>
                         <ClipboardItem
