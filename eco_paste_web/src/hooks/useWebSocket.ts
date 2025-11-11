@@ -96,7 +96,20 @@ export const useWebSocket = (options: UseWebSocketOptions) => {
   // 设置消息处理器
   const setupMessageHandlers = () => {
     // 剪贴板同步（来自其他设备）
-    wsClient.on("clipboard_sync", (_msg: WSServerMessage) => {
+    wsClient.on("clipboard_sync", (msg: WSServerMessage) => {
+      // 获取当前设备 ID
+      const currentDeviceId = localStorage.getItem("device_id");
+      const sourceDeviceId = msg.source_device_id;
+
+      // 如果是来自当前设备的消息，忽略（虽然后端应该已经排除了）
+      if (
+        sourceDeviceId &&
+        currentDeviceId &&
+        sourceDeviceId === currentDeviceId
+      ) {
+        return;
+      }
+
       // 刷新剪贴板列表
       queryClient.invalidateQueries({ queryKey: [CLIPBOARD_QUERY_KEY] });
       message.success("收到新的剪贴板内容");

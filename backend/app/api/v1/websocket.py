@@ -297,6 +297,12 @@ async def handle_sync_clipboard(websocket, payload, user, device_id, message_id)
                     filtered_payload['file_name'] = payload.get('remote_file_name')
                 logger.info(f"[WS] 图片类型，file_id={filtered_payload['value']}, file_name={filtered_payload.get('file_name')}")
 
+            # 强制使用 WebSocket 连接的 device_id，忽略 payload 中的（防止伪造）
+            filtered_payload['device_id'] = device_id
+            # 如果 payload 中有 device_name，使用它；否则使用默认值
+            if 'device_name' not in filtered_payload:
+                filtered_payload['device_name'] = f"Device_{device_id[:8]}"
+
             # 插入新记录（字段名完全对齐前端）
             db_item = ClipboardHistory(
                 **filtered_payload,

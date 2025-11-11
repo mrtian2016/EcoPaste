@@ -154,7 +154,10 @@ class ConnectionManager:
         # 使用统一的数据结构，和队列消费者保持一致
         await self.broadcast_system_message(
             message_type="clipboard_sync",
-            data={"clipboard_item": clipboard_data},
+            data={
+                "clipboard_item": clipboard_data,
+                "source_device_id": source_device_id  # 添加源设备ID，供前端判断
+            },
             exclude_device=source_device_id,
             user_id=user_id
         )
@@ -274,7 +277,10 @@ class ConnectionManager:
                 # 使用 broadcast_system_message 统一发送
                 await self.broadcast_system_message(
                     message_type="clipboard_sync",
-                    data={"clipboard_item": clipboard_data},
+                    data={
+                        "clipboard_item": clipboard_data,
+                        "source_device_id": device_id or "http_api"  # 添加源设备ID
+                    },
                     exclude_device=device_id or "http_api",
                     user_id=user_id
                 )

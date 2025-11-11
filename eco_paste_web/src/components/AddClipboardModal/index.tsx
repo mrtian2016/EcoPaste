@@ -54,9 +54,15 @@ const AddClipboardModal: FC<AddClipboardModalProps> = ({
     try {
       setUploading(true);
 
+      // 获取设备信息
+      const deviceId = localStorage.getItem("device_id") || "web_unknown";
+      const deviceName = "Web Client";
+
       const clipboardItem: ClipboardItem = {
         count: textValue.length,
         createTime: new Date().toISOString(),
+        device_id: deviceId,
+        device_name: deviceName,
         favorite: 0,
         id: nanoid(),
         search: textValue,
@@ -79,6 +85,28 @@ const AddClipboardModal: FC<AddClipboardModalProps> = ({
     }
   };
 
+  // 获取图片尺寸
+  const getImageDimensions = (
+    file: File,
+  ): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve({ height: img.height, width: img.width });
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("无法读取图片尺寸"));
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
   // 提交图片类型
   const handleSubmitImage = async () => {
     if (fileList.length === 0) {
@@ -94,13 +122,23 @@ const AddClipboardModal: FC<AddClipboardModalProps> = ({
         throw new Error("文件不存在");
       }
 
+      // 获取图片尺寸
+      const { width, height } = await getImageDimensions(file);
+
       // 上传图片
       const response = await filesApi.upload(file);
+
+      // 获取设备信息
+      const deviceId = localStorage.getItem("device_id") || "web_unknown";
+      const deviceName = "Web Client";
 
       const clipboardItem: ClipboardItem = {
         count: response.data.file_size, // 文件大小
         createTime: new Date().toISOString(),
+        device_id: deviceId,
+        device_name: deviceName,
         favorite: 0,
+        height, // 图片高度
         id: nanoid(),
         remote_file_id: response.data.file_id,
         remote_file_name: response.data.file_name,
@@ -108,6 +146,7 @@ const AddClipboardModal: FC<AddClipboardModalProps> = ({
         search: response.data.file_name,
         type: "image",
         value: response.data.file_name, // 使用文件名而非 URL
+        width, // 图片宽度
       };
 
       // 通过 WebSocket 同步到后端
@@ -154,9 +193,15 @@ const AddClipboardModal: FC<AddClipboardModalProps> = ({
         original_name: res.data.file_name, // 使用 original_name 字段名
       }));
 
+      // 获取设备信息
+      const deviceId = localStorage.getItem("device_id") || "web_unknown";
+      const deviceName = "Web Client";
+
       const clipboardItem: ClipboardItem = {
         count: remoteFiles.reduce((sum, f) => sum + (f.file_size || 0), 0), // 总文件大小
         createTime: new Date().toISOString(),
+        device_id: deviceId,
+        device_name: deviceName,
         favorite: 0,
         id: nanoid(),
         remote_files: JSON.stringify(remoteFiles),
