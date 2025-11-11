@@ -69,7 +69,7 @@ const ClipboardHistory = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-color-2 py-6">
+    <div className="min-h-screen bg-color-2 px-3 py-6 md:px-0">
       <Flex
         className="mx-auto h-[calc(100vh-3rem)] max-w-2xl rounded-lg bg-color-1 py-3 shadow-lg"
         gap={12}

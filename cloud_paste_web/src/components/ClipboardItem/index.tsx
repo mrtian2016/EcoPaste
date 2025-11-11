@@ -1,11 +1,11 @@
 /**
  * 剪贴板列表项组件 - 完全对齐 EcoPaste UI
  */
+import "dayjs/locale/zh-cn";
 import { Flex, Popconfirm } from "antd";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import "dayjs/locale/zh-cn";
 import { Marker } from "react-mark.js";
 import Scrollbar from "@/components/Scrollbar";
 import UnoIcon from "@/components/UnoIcon";
@@ -14,6 +14,11 @@ import {
   useToggleFavorite,
 } from "@/hooks/useClipboardHistory";
 import type { ClipboardItem as ClipboardItemType } from "@/types/clipboard";
+import FilesContent from "./components/FilesContent";
+import HtmlContent from "./components/HtmlContent";
+import ImageContent from "./components/ImageContent";
+import RtfContent from "./components/RtfContent";
+import TextContent from "./components/TextContent";
 
 dayjs.extend(relativeTime);
 dayjs.locale("zh-cn");
@@ -71,32 +76,28 @@ const ClipboardItem = ({
 
   // 渲染内容
   const renderContent = () => {
-    if (item.type === "image") {
-      return item.remote_file_url ? (
-        <img
-          alt="clipboard"
-          className="max-h-40 max-w-full rounded object-contain"
-          src={`${import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") || ""}${item.remote_file_url}`}
-        />
-      ) : (
-        <span className="text-color-2">图片</span>
-      );
+    switch (item.type) {
+      case "text":
+        return <TextContent item={item} searchText={searchText} />;
+      case "image":
+        return <ImageContent item={item} />;
+      case "files":
+        return <FilesContent item={item} />;
+      case "html":
+        return <HtmlContent item={item} searchText={searchText} />;
+      case "rtf":
+        return <RtfContent item={item} searchText={searchText} />;
+      default:
+        return (
+          <div className="line-clamp-4 break-words">
+            {searchText ? (
+              <Marker mark={searchText}>{item.value}</Marker>
+            ) : (
+              item.value
+            )}
+          </div>
+        );
     }
-
-    if (item.type === "files") {
-      return <span className="text-color-2">文件列表</span>;
-    }
-
-    // 文本内容，支持搜索高亮
-    return (
-      <div className="line-clamp-4 break-words">
-        {searchText ? (
-          <Marker mark={searchText}>{item.value}</Marker>
-        ) : (
-          item.value
-        )}
-      </div>
-    );
   };
 
   // 切换收藏
@@ -127,7 +128,7 @@ const ClipboardItem = ({
     },
     {
       className: item.favorite ? "text-gold!" : "",
-      icon: item.favorite ? "i-hugeicons:star" : "i-hugeicons:star-off",
+      icon: item.favorite ? "i-iconamoon:star-fill" : "i-iconamoon:star",
       key: "favorite",
       onClick: handleToggleFavorite,
       show: true,
@@ -219,15 +220,13 @@ const ClipboardItem = ({
       {/* Content */}
       <div className="relative flex-1 select-auto overflow-hidden break-words">
         {item.note ? (
-          <>
-            <div className="pointer-events-none line-clamp-4">
-              <UnoIcon
-                className="mr-0.5 inline translate-y-0.5"
-                name="i-hugeicons:task-edit-01"
-              />
-              <Marker mark={searchText}>{item.note}</Marker>
-            </div>
-          </>
+          <div className="pointer-events-none line-clamp-4">
+            <UnoIcon
+              className="mr-0.5 inline translate-y-0.5"
+              name="i-hugeicons:task-edit-01"
+            />
+            <Marker mark={searchText}>{item.note}</Marker>
+          </div>
         ) : (
           renderContent()
         )}
