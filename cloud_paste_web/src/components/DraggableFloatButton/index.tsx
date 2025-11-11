@@ -5,7 +5,7 @@ import type { FC, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
 // 配置常量
-const BUTTON_SIZE = 40; // 按钮尺寸
+const BUTTON_SIZE = 60; // 按钮尺寸
 const EDGE_MARGIN_BOTTOM = 10; // 底部边距
 const EDGE_MARGIN_RIGHT = 5; // 右侧边距
 
@@ -179,7 +179,7 @@ const DraggableFloatButton: FC<DraggableFloatButtonProps> = ({
         color: "white",
         cursor: isDragging ? "grabbing" : "pointer",
         display: "flex",
-        fontSize: "18px",
+        fontSize: "28px",
         height: BUTTON_SIZE,
         justifyContent: "center",
         position: "fixed",

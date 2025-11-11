@@ -5,7 +5,7 @@
 import { useDebounce } from "ahooks";
 import { Empty, Flex, Input, Spin, Tag } from "antd";
 import clsx from "clsx";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AddClipboardModal from "@/components/AddClipboardModal";
 import ClipboardItem from "@/components/ClipboardItem";
@@ -14,7 +14,10 @@ import Scrollbar from "@/components/Scrollbar";
 import UnoIcon from "@/components/UnoIcon";
 import { useClipboardHistory } from "@/hooks/useClipboardHistory";
 import { logout } from "@/stores/auth";
-import type { ClipboardListParams } from "@/types/clipboard";
+import type {
+  ClipboardItem as ClipboardItemType,
+  ClipboardListParams,
+} from "@/types/clipboard";
 
 type GroupType = "all" | "text" | "image" | "files" | "favorite";
 
@@ -24,11 +27,14 @@ const ClipboardHistory = () => {
   const [searchText, setSearchText] = useState("");
   const [activeId, setActiveId] = useState<string>();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [allItems, setAllItems] = useState<ClipboardItemType[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const isLoadingMoreRef = useRef(false);
 
   const [params, setParams] = useState<ClipboardListParams>({
     favorite: undefined,
     page: 1,
-    page_size: 50,
+    page_size: 10,
     search: undefined,
   });
 
@@ -38,15 +44,54 @@ const ClipboardHistory = () => {
   // 查询数据
   const { data, isLoading } = useClipboardHistory(debouncedParams);
 
+  // 处理数据更新
+  useEffect(() => {
+    if (data) {
+      if (params.page === 1) {
+        // 第一页，重置数据
+        setAllItems(data.items || []);
+      } else {
+        // 后续页，追加数据
+        setAllItems((prev) => [...prev, ...(data.items || [])]);
+      }
+      // 判断是否还有更多数据：当前页 * 每页数量 < 总数
+      const hasMoreData = data.page * data.page_size < data.total;
+      setHasMore(hasMoreData);
+      isLoadingMoreRef.current = false;
+    }
+  }, [data, params.page]);
+
+  // 滚动到底部加载更多
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const scrollBottom =
+      target.scrollHeight - target.scrollTop - target.clientHeight;
+
+    // 当距离底部小于 100px 且还有更多数据且不在加载中时，加载下一页
+    if (
+      scrollBottom < 100 &&
+      hasMore &&
+      !isLoading &&
+      !isLoadingMoreRef.current
+    ) {
+      isLoadingMoreRef.current = true;
+      setParams((prev) => ({ ...prev, page: (prev.page || 1) + 1 }));
+    }
+  };
+
   // 搜索
   const handleSearch = (value: string) => {
     setSearchText(value);
+    setAllItems([]);
+    setHasMore(true);
     setParams({ ...params, page: 1, search: value || undefined });
   };
 
   // 切换分组
   const handleGroupChange = (newGroup: GroupType) => {
     setGroup(newGroup);
+    setAllItems([]);
+    setHasMore(true);
 
     if (newGroup === "favorite") {
       setParams({ ...params, favorite: true, page: 1, type: undefined });
@@ -133,11 +178,11 @@ const ClipboardHistory = () => {
             </Flex>
 
             {/* 列表内容 */}
-            <Scrollbar className="flex-1" offsetX={3}>
-              <Spin spinning={isLoading}>
-                {data?.items && data.items.length > 0 ? (
+            <Scrollbar className="flex-1" offsetX={3} onScroll={handleScroll}>
+              <Spin spinning={isLoading && (params.page || 1) === 1}>
+                {allItems.length > 0 ? (
                   <div className="pb-20">
-                    {data.items.map((item, index) => (
+                    {allItems.map((item, index) => (
                       <div className={index !== 0 ? "pt-3" : ""} key={item.id}>
                         <ClipboardItem
                           isActive={activeId === item.id}
@@ -147,6 +192,18 @@ const ClipboardHistory = () => {
                         />
                       </div>
                     ))}
+                    {/* 加载更多指示器 */}
+                    {isLoading && (params.page || 1) > 1 && (
+                      <div className="py-4 text-center">
+                        <Spin size="small" />
+                      </div>
+                    )}
+                    {/* 没有更多数据提示 */}
+                    {!hasMore && allItems.length > 0 && (
+                      <div className="py-4 text-center text-color-3 text-sm">
+                        没有更多数据了
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <Empty
@@ -170,8 +227,10 @@ const ClipboardHistory = () => {
       <AddClipboardModal
         onClose={() => setShowAddModal(false)}
         onSuccess={() => {
-          // 刷新列表
-          setParams({ ...params });
+          // 刷新列表 - 重置到第一页
+          setAllItems([]);
+          setHasMore(true);
+          setParams({ ...params, page: 1 });
         }}
         open={showAddModal}
       />
