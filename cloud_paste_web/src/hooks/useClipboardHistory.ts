@@ -4,6 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { message } from "antd";
 import { clipboardApi } from "@/api/endpoints/clipboard";
+import { syncManager } from "@/api/syncManager";
 import type { ClipboardListParams } from "@/types/clipboard";
 
 export const CLIPBOARD_QUERY_KEY = "clipboard-history";
@@ -31,15 +32,15 @@ export const useClipboardItem = (id: string) => {
 };
 
 /**
- * 删除剪贴板项
+ * 删除剪贴板项（使用 WebSocket）
  */
 export const useDeleteClipboardItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: clipboardApi.deleteItem,
+    mutationFn: syncManager.deleteClipboard.bind(syncManager),
     onError: (error: any) => {
-      message.error(error?.response?.data?.detail || "删除失败");
+      message.error(error?.message || "删除失败");
     },
     onSuccess: () => {
       // 刷新列表
@@ -50,15 +51,15 @@ export const useDeleteClipboardItem = () => {
 };
 
 /**
- * 批量删除剪贴板项
+ * 批量删除剪贴板项（使用 WebSocket）
  */
 export const useBatchDeleteClipboard = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: clipboardApi.batchDelete,
+    mutationFn: syncManager.deleteClipboardBatch.bind(syncManager),
     onError: (error: any) => {
-      message.error(error?.response?.data?.detail || "批量删除失败");
+      message.error(error?.message || "批量删除失败");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CLIPBOARD_QUERY_KEY] });
@@ -68,16 +69,16 @@ export const useBatchDeleteClipboard = () => {
 };
 
 /**
- * 切换收藏状态
+ * 切换收藏状态（使用 WebSocket）
  */
 export const useToggleFavorite = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, favorite }: { id: string; favorite: number }) =>
-      clipboardApi.toggleFavorite(id, favorite),
+      syncManager.updateClipboard(id, { favorite }),
     onError: (error: any) => {
-      message.error(error?.response?.data?.detail || "操作失败");
+      message.error(error?.message || "操作失败");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CLIPBOARD_QUERY_KEY] });
@@ -86,16 +87,16 @@ export const useToggleFavorite = () => {
 };
 
 /**
- * 更新备注
+ * 更新备注（使用 WebSocket）
  */
 export const useUpdateNote = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, note }: { id: string; note: string }) =>
-      clipboardApi.updateNote(id, note),
+      syncManager.updateClipboard(id, { note }),
     onError: (error: any) => {
-      message.error(error?.response?.data?.detail || "更新失败");
+      message.error(error?.message || "更新失败");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CLIPBOARD_QUERY_KEY] });
