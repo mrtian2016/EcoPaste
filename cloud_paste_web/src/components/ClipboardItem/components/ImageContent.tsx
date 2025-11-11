@@ -1,6 +1,7 @@
 /**
  * 图片内容渲染组件
  */
+import { Image } from "antd";
 import type { FC } from "react";
 import { useSnapshot } from "valtio";
 import { authStore } from "@/stores/auth";
@@ -35,9 +36,13 @@ const ImageContent: FC<ImageContentProps> = ({ item }) => {
   const imageUrl = `${baseUrl}${fileUrl}?token=${token}`;
 
   return (
-    <img
+    <Image
       alt="clipboard"
       className="max-h-40 max-w-full rounded object-contain"
+      preview={{
+        mask: null,
+        src: imageUrl,
+      }}
       src={imageUrl}
     />
   );

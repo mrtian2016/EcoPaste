@@ -14,6 +14,7 @@ import {
   useToggleFavorite,
 } from "@/hooks/useClipboardHistory";
 import type { ClipboardItem as ClipboardItemType } from "@/types/clipboard";
+import { isImageFile, isTextFile } from "@/utils/file";
 import FilesContent from "./components/FilesContent";
 import HtmlContent from "./components/HtmlContent";
 import ImageContent from "./components/ImageContent";
@@ -55,8 +56,38 @@ const ClipboardItem = ({
         return "HTML";
       case "image":
         return "图片";
-      case "files":
-        return `${JSON.parse(item.value || "[]").length || 0} 个文件`;
+      case "files": {
+        try {
+          const jsonStr = item.remote_files || item.value || "[]";
+          const files = JSON.parse(jsonStr);
+
+          // 如果只有一个文件，根据类型显示
+          if (files.length === 1) {
+            const fileName = files[0].original_name || files[0].name;
+            if (fileName) {
+              if (isImageFile(fileName)) {
+                return "图片";
+              }
+              if (isTextFile(fileName)) {
+                return "文本文件";
+              }
+            }
+          }
+
+          // 检查是否全部是图片
+          const allImages = files.every((file: any) =>
+            isImageFile(file.original_name || file.name),
+          );
+
+          if (allImages) {
+            return `${files.length} 张图片`;
+          }
+
+          return `${files.length || 0} 个文件`;
+        } catch {
+          return "文件";
+        }
+      }
       default:
         return item.type;
     }
