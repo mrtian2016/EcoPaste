@@ -2,6 +2,7 @@
  * 剪贴板历史列表页面 - 完全对齐 EcoPaste UI
  */
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "ahooks";
 import { Empty, Flex, Input, Spin, Tag } from "antd";
 import clsx from "clsx";
@@ -12,7 +13,10 @@ import ClipboardItem from "@/components/ClipboardItem";
 import DraggableFloatButton from "@/components/DraggableFloatButton";
 import Scrollbar from "@/components/Scrollbar";
 import UnoIcon from "@/components/UnoIcon";
-import { useClipboardHistory } from "@/hooks/useClipboardHistory";
+import {
+  CLIPBOARD_QUERY_KEY,
+  useClipboardHistory,
+} from "@/hooks/useClipboardHistory";
 import { logout } from "@/stores/auth";
 import type {
   ClipboardItem as ClipboardItemType,
@@ -23,6 +27,7 @@ type GroupType = "all" | "text" | "image" | "files" | "favorite";
 
 const ClipboardHistory = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [group, setGroup] = useState<GroupType>("all");
   const [searchText, setSearchText] = useState("");
   const [activeId, setActiveId] = useState<string>();
@@ -34,7 +39,7 @@ const ClipboardHistory = () => {
   const [params, setParams] = useState<ClipboardListParams>({
     favorite: undefined,
     page: 1,
-    page_size: 10,
+    page_size: 20,
     search: undefined,
   });
 
@@ -51,8 +56,14 @@ const ClipboardHistory = () => {
         // 第一页，重置数据
         setAllItems(data.items || []);
       } else {
-        // 后续页，追加数据
-        setAllItems((prev) => [...prev, ...(data.items || [])]);
+        // 后续页，追加数据并去重
+        setAllItems((prev) => {
+          const existingIds = new Set(prev.map((item) => item.id));
+          const newItems = (data.items || []).filter(
+            (item) => !existingIds.has(item.id),
+          );
+          return [...prev, ...newItems];
+        });
       }
       // 判断是否还有更多数据：当前页 * 每页数量 < 总数
       const hasMoreData = data.page * data.page_size < data.total;
@@ -179,39 +190,44 @@ const ClipboardHistory = () => {
 
             {/* 列表内容 */}
             <Scrollbar className="flex-1" offsetX={3} onScroll={handleScroll}>
-              <Spin spinning={isLoading && (params.page || 1) === 1}>
-                {allItems.length > 0 ? (
-                  <div className="pb-20">
-                    {allItems.map((item, index) => (
-                      <div className={index !== 0 ? "pt-3" : ""} key={item.id}>
-                        <ClipboardItem
-                          isActive={activeId === item.id}
-                          item={item}
-                          onClick={() => setActiveId(item.id)}
-                          searchText={searchText}
-                        />
-                      </div>
-                    ))}
-                    {/* 加载更多指示器 */}
-                    {isLoading && (params.page || 1) > 1 && (
-                      <div className="py-4 text-center">
-                        <Spin size="small" />
-                      </div>
-                    )}
-                    {/* 没有更多数据提示 */}
-                    {!hasMore && allItems.length > 0 && (
-                      <div className="py-4 text-center text-color-3 text-sm">
-                        没有更多数据了
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <Empty
-                    description="暂无剪贴板历史"
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  />
-                )}
-              </Spin>
+              {isLoading &&
+              (params.page || 1) === 1 &&
+              allItems.length === 0 ? (
+                // 首次加载显示全局 loading
+                <div className="flex h-full items-center justify-center">
+                  <Spin size="large" />
+                </div>
+              ) : allItems.length > 0 ? (
+                <div className="pb-20">
+                  {allItems.map((item, index) => (
+                    <div className={index !== 0 ? "pt-3" : ""} key={item.id}>
+                      <ClipboardItem
+                        isActive={activeId === item.id}
+                        item={item}
+                        onClick={() => setActiveId(item.id)}
+                        searchText={searchText}
+                      />
+                    </div>
+                  ))}
+                  {/* 加载更多指示器 */}
+                  {isLoading && (params.page || 1) > 1 && (
+                    <div className="py-4 text-center">
+                      <Spin size="small" />
+                    </div>
+                  )}
+                  {/* 没有更多数据提示 */}
+                  {!hasMore && allItems.length > 0 && (
+                    <div className="py-4 text-center text-color-3 text-sm">
+                      没有更多数据了
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Empty
+                  description="暂无剪贴板历史"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
+              )}
             </Scrollbar>
           </Flex>
         </Flex>
@@ -227,10 +243,14 @@ const ClipboardHistory = () => {
       <AddClipboardModal
         onClose={() => setShowAddModal(false)}
         onSuccess={() => {
-          // 刷新列表 - 重置到第一页
-          setAllItems([]);
-          setHasMore(true);
-          setParams({ ...params, page: 1 });
+          // 如果不在第一页，重置到第一页
+          if (params.page !== 1) {
+            setAllItems([]);
+            setHasMore(true);
+            setParams((prev) => ({ ...prev, page: 1 }));
+          }
+          // 强制刷新查询（会自动触发数据重新加载）
+          queryClient.invalidateQueries({ queryKey: [CLIPBOARD_QUERY_KEY] });
         }}
         open={showAddModal}
       />

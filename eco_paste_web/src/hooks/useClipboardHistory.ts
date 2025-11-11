@@ -16,7 +16,7 @@ export const useClipboardHistory = (params: ClipboardListParams = {}) => {
   return useQuery({
     queryFn: () => clipboardApi.getList(params),
     queryKey: [CLIPBOARD_QUERY_KEY, params],
-    staleTime: 1000 * 60 * 5, // 5分钟内不重新请求
+    staleTime: 0, // 不缓存，总是重新请求
   });
 };
 

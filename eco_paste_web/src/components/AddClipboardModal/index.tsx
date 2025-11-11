@@ -55,7 +55,7 @@ const AddClipboardModal: FC<AddClipboardModalProps> = ({
       setUploading(true);
 
       const clipboardItem: ClipboardItem = {
-        count: 0,
+        count: textValue.length,
         createTime: new Date().toISOString(),
         favorite: 0,
         id: nanoid(),

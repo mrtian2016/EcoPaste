@@ -346,7 +346,7 @@ async def get_clipboard_list(
         
         # 添加排序和分页
         offset = (page - 1) * page_size
-        query = query.order_by(ClipboardHistory.createTime.desc()).limit(page_size).offset(offset)
+        query = query.order_by(ClipboardHistory.updated_at.desc()).limit(page_size).offset(offset)
         
         # 执行查询
         result = await db.execute(query)

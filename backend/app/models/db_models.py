@@ -2,8 +2,14 @@
 SQLAlchemy 数据库模型定义（对齐前端 Schema）
 """
 from typing import Optional
+from datetime import datetime, timezone
 from sqlalchemy import String, Text, Integer, Index, ForeignKey, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+def get_current_iso_time() -> str:
+    """获取当前 UTC 时间的 ISO 8601 格式字符串"""
+    return datetime.now(timezone.utc).isoformat()
 
 
 class Base(DeclarativeBase):
@@ -64,7 +70,12 @@ class ClipboardHistory(Base):
     # ===== 同步辅助字段 =====
     content_hash: Mapped[Optional[str]] = mapped_column(String(64), comment="内容哈希 SHA256")
     synced: Mapped[int] = mapped_column(Integer, default=1, nullable=False, comment="是否已同步 0/1")
-    updated_at: Mapped[Optional[str]] = mapped_column(String(50), comment="最后更新时间 ISO 8601")
+    updated_at: Mapped[Optional[str]] = mapped_column(
+        String(50), 
+        default=get_current_iso_time, 
+        onupdate=get_current_iso_time, 
+        comment="最后更新时间 ISO 8601"
+    )
     file_name: Mapped[Optional[str]] = mapped_column(String(255), comment="原始文件名（用于图片和文件类型）")
 
     # 索引
