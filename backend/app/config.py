@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     # API 配置
     API_PREFIX: str = "/api/v1"
-    PROJECT_NAME: str = "CloudPaste History API"
+    PROJECT_NAME: str = "EcoPaste History API"
     VERSION: str = "1.0.0"
     
     class Config:

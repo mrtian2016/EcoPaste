@@ -66,7 +66,7 @@ app.include_router(api_router, prefix=settings.API_PREFIX)
 async def root():
     """API 根路径"""
     return {
-        "message": "欢迎使用 CloudPaste History API",
+        "message": "欢迎使用 EcoPaste History API",
         "version": settings.VERSION,
         "docs": "/docs",
         "redoc": "/redoc"

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 启动脚本
-echo "启动 CloudPaste 后端服务..."
+echo "启动 EcoPaste 后端服务..."
 
 
 
@@ -23,4 +23,4 @@ fi
 
 # 启动服务
 echo "启动 FastAPI 服务器..."
-~/conda/envs/cloudpaste/bin/python run.py
+~/conda/envs/EcoPaste/bin/python run.py
