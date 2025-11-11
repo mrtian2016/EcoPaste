@@ -7,7 +7,12 @@ import { useSnapshot } from "valtio";
 import UnoIcon from "@/components/UnoIcon";
 import { authStore } from "@/stores/auth";
 import type { ClipboardItem } from "@/types/clipboard";
-import { isImageFile, isTextFile } from "@/utils/file";
+import {
+  isAudioFile,
+  isImageFile,
+  isTextFile,
+  isVideoFile,
+} from "@/utils/file";
 
 interface FilesContentProps {
   item: ClipboardItem;
@@ -32,6 +37,10 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
   const [loading, setLoading] = useState(false);
   const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [mediaPreviewVisible, setMediaPreviewVisible] = useState(false);
+  const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
+  const [mediaPreviewTitle, setMediaPreviewTitle] = useState("");
+  const [mediaType, setMediaType] = useState<"video" | "audio">("video");
 
   // 解析文件列表 - 优先使用 remote_files
   let files: FileItem[] = [];
@@ -70,13 +79,7 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
     }));
 
   // 获取文件内容
-  const fetchFileContent = async (
-    e: React.MouseEvent,
-    fileId: string,
-    fileName: string,
-  ) => {
-    e.stopPropagation(); // 阻止事件冒泡
-
+  const fetchFileContent = async (fileId: string, fileName: string) => {
     setLoading(true);
     setPreviewTitle(fileName);
     setPreviewVisible(true);
@@ -101,6 +104,28 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
     }
   };
 
+  // 打开媒体文件预览
+  const openMediaPreview = (
+    fileId: string,
+    fileName: string,
+    type: "video" | "audio",
+  ) => {
+    const baseUrl =
+      import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") || "";
+    const mediaUrl = `${baseUrl}/api/v1/files/download/${fileId}?token=${token}`;
+    setMediaPreviewUrl(mediaUrl);
+    setMediaPreviewTitle(fileName);
+    setMediaType(type);
+    setMediaPreviewVisible(true);
+  };
+
+  // 关闭媒体预览
+  const closeMediaPreview = () => {
+    setMediaPreviewVisible(false);
+    // 立即清空 URL 停止播放
+    setMediaPreviewUrl("");
+  };
+
   // 如果只有一个文件
   if (files.length === 1) {
     const file = files[0];
@@ -108,6 +133,8 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
     const fileName = file.original_name || file.name;
     const isImage = isImageFile(fileName);
     const isText = isTextFile(fileName);
+    const isVideo = isVideoFile(fileName);
+    const isAudio = isAudioFile(fileName);
 
     // 图片预览
     if (isImage && file.file_id) {
@@ -128,6 +155,142 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
       );
     }
 
+    // 视频预览
+    if (isVideo && file.file_id) {
+      return (
+        <>
+          <Flex
+            align="center"
+            className="cursor-pointer rounded bg-color-2 px-3 py-2 transition hover:bg-color-3"
+            gap="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              openMediaPreview(file.file_id!, fileName || "视频", "video");
+            }}
+          >
+            <UnoIcon
+              className="text-color-2 text-lg"
+              name="i-hugeicons:video-01"
+            />
+            <span className="flex-1 truncate text-sm">{fileName}</span>
+            <UnoIcon className="text-color-3" name="i-hugeicons:view" />
+          </Flex>
+
+          {/* 视频/音频预览 Modal */}
+          <Modal
+            footer={null}
+            onCancel={closeMediaPreview}
+            open={mediaPreviewVisible}
+            title={mediaPreviewTitle}
+            width={800}
+          >
+            {mediaPreviewUrl && (
+              <>
+                {mediaType === "video" ? (
+                  <video
+                    className="w-full rounded"
+                    controls
+                    key={mediaPreviewUrl}
+                    src={mediaPreviewUrl}
+                  >
+                    您的浏览器不支持视频播放
+                  </video>
+                ) : (
+                  <Flex
+                    align="center"
+                    className="w-full py-4"
+                    gap="small"
+                    vertical
+                  >
+                    <UnoIcon
+                      className="text-4xl text-color-2"
+                      name="i-hugeicons:music-note-03"
+                    />
+                    <audio
+                      className="w-full"
+                      controls
+                      key={mediaPreviewUrl}
+                      src={mediaPreviewUrl}
+                    >
+                      您的浏览器不支持音频播放
+                    </audio>
+                  </Flex>
+                )}
+              </>
+            )}
+          </Modal>
+        </>
+      );
+    }
+
+    // 音频预览
+    if (isAudio && file.file_id) {
+      return (
+        <>
+          <Flex
+            align="center"
+            className="cursor-pointer rounded bg-color-2 px-3 py-2 transition hover:bg-color-3"
+            gap="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              openMediaPreview(file.file_id!, fileName || "音频", "audio");
+            }}
+          >
+            <UnoIcon
+              className="text-color-2 text-lg"
+              name="i-hugeicons:music-note-03"
+            />
+            <span className="flex-1 truncate text-sm">{fileName}</span>
+            <UnoIcon className="text-color-3" name="i-hugeicons:view" />
+          </Flex>
+
+          {/* 视频/音频预览 Modal */}
+          <Modal
+            footer={null}
+            onCancel={closeMediaPreview}
+            open={mediaPreviewVisible}
+            title={mediaPreviewTitle}
+            width={800}
+          >
+            {mediaPreviewUrl && (
+              <>
+                {mediaType === "video" ? (
+                  <video
+                    className="w-full rounded"
+                    controls
+                    key={mediaPreviewUrl}
+                    src={mediaPreviewUrl}
+                  >
+                    您的浏览器不支持视频播放
+                  </video>
+                ) : (
+                  <Flex
+                    align="center"
+                    className="w-full py-4"
+                    gap="small"
+                    vertical
+                  >
+                    <UnoIcon
+                      className="text-4xl text-color-2"
+                      name="i-hugeicons:music-note-03"
+                    />
+                    <audio
+                      className="w-full"
+                      controls
+                      key={mediaPreviewUrl}
+                      src={mediaPreviewUrl}
+                    >
+                      您的浏览器不支持音频播放
+                    </audio>
+                  </Flex>
+                )}
+              </>
+            )}
+          </Modal>
+        </>
+      );
+    }
+
     // 文本文件预览
     if (isText && file.file_id) {
       return (
@@ -136,9 +299,10 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
             align="center"
             className="cursor-pointer rounded bg-color-2 px-3 py-2 transition hover:bg-color-3"
             gap="small"
-            onClick={(e) =>
-              fetchFileContent(e, file.file_id!, fileName || "文本文件")
-            }
+            onClick={(e) => {
+              e.stopPropagation();
+              fetchFileContent(file.file_id!, fileName || "文本文件");
+            }}
           >
             <UnoIcon
               className="text-color-2 text-lg"
@@ -230,7 +394,7 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
     );
   }
 
-  // 渲染混合文件列表（图片、文本、其他文件）
+  // 渲染混合文件列表（图片、文本、视频、音频、其他文件）
   const maxDisplay = 3;
   const displayFiles = files.slice(0, maxDisplay);
   const remaining = files.length - maxDisplay;
@@ -243,6 +407,8 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
             file.original_name || file.name || `文件 ${index + 1}`;
           const isText = isTextFile(fileName);
           const isImage = isImageFile(fileName);
+          const isVideo = isVideoFile(fileName);
+          const isAudio = isAudioFile(fileName);
 
           // 如果是图片，点击预览
           if (isImage && file.file_id) {
@@ -271,6 +437,55 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
             );
           }
 
+          // 如果是视频，点击预览
+          if (isVideo && file.file_id) {
+            return (
+              <Flex
+                align="center"
+                className="cursor-pointer transition hover:text-primary"
+                gap="small"
+                key={file.file_id || fileName}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openMediaPreview(file.file_id!, fileName, "video");
+                }}
+              >
+                <UnoIcon className="text-color-2" name="i-hugeicons:video-01" />
+                <span className="flex-1 truncate text-sm">{fileName}</span>
+                <UnoIcon
+                  className="text-color-3 text-xs"
+                  name="i-hugeicons:view"
+                />
+              </Flex>
+            );
+          }
+
+          // 如果是音频，点击预览
+          if (isAudio && file.file_id) {
+            return (
+              <Flex
+                align="center"
+                className="cursor-pointer transition hover:text-primary"
+                gap="small"
+                key={file.file_id || fileName}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openMediaPreview(file.file_id!, fileName, "audio");
+                }}
+              >
+                <UnoIcon
+                  className="text-color-2"
+                  name="i-hugeicons:music-note-03"
+                />
+                <span className="flex-1 truncate text-sm">{fileName}</span>
+                <UnoIcon
+                  className="text-color-3 text-xs"
+                  name="i-hugeicons:view"
+                />
+              </Flex>
+            );
+          }
+
           // 如果是文本，点击预览文本
           return (
             <Flex
@@ -284,7 +499,10 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
               key={file.file_id || fileName}
               onClick={
                 isText && file.file_id
-                  ? (e) => fetchFileContent(e, file.file_id!, fileName)
+                  ? (e) => {
+                      e.stopPropagation();
+                      fetchFileContent(file.file_id!, fileName);
+                    }
                   : undefined
               }
             >
@@ -327,6 +545,31 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
           </Image.PreviewGroup>
         </div>
       )}
+
+      {/* 视频/音频预览 Modal */}
+      <Modal
+        footer={null}
+        onCancel={closeMediaPreview}
+        open={mediaPreviewVisible}
+        title={mediaPreviewTitle}
+        width={800}
+      >
+        {mediaType === "video" ? (
+          <video className="w-full rounded" controls src={mediaPreviewUrl}>
+            您的浏览器不支持视频播放
+          </video>
+        ) : (
+          <Flex align="center" className="w-full py-4" gap="small" vertical>
+            <UnoIcon
+              className="text-4xl text-color-2"
+              name="i-hugeicons:music-note-03"
+            />
+            <audio className="w-full" controls src={mediaPreviewUrl}>
+              您的浏览器不支持音频播放
+            </audio>
+          </Flex>
+        )}
+      </Modal>
 
       {/* 文本文件预览 Modal */}
       <Modal

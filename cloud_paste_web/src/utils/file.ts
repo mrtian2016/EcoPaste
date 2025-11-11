@@ -56,6 +56,33 @@ export const TEXT_EXTENSIONS = [
   ".csv",
 ];
 
+// 视频文件扩展名列表
+export const VIDEO_EXTENSIONS = [
+  ".mp4",
+  ".webm",
+  ".ogg",
+  ".mov",
+  ".avi",
+  ".wmv",
+  ".flv",
+  ".mkv",
+  ".m4v",
+  ".3gp",
+];
+
+// 音频文件扩展名列表
+export const AUDIO_EXTENSIONS = [
+  ".mp3",
+  ".wav",
+  ".ogg",
+  ".m4a",
+  ".aac",
+  ".flac",
+  ".wma",
+  ".opus",
+  ".oga",
+];
+
 /**
  * 判断文件是否是图片
  */
@@ -72,6 +99,24 @@ export const isTextFile = (fileName?: string): boolean => {
   if (!fileName) return false;
   const lowerName = fileName.toLowerCase();
   return TEXT_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+};
+
+/**
+ * 判断文件是否是视频
+ */
+export const isVideoFile = (fileName?: string): boolean => {
+  if (!fileName) return false;
+  const lowerName = fileName.toLowerCase();
+  return VIDEO_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+};
+
+/**
+ * 判断文件是否是音频
+ */
+export const isAudioFile = (fileName?: string): boolean => {
+  if (!fileName) return false;
+  const lowerName = fileName.toLowerCase();
+  return AUDIO_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
 };
 
 /**

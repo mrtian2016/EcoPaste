@@ -240,7 +240,10 @@ const ClipboardItem = ({
                   hoverable
                   key={button.key}
                   name={button.icon}
-                  onClick={button.onClick}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    button.onClick();
+                  }}
                   title={button.title}
                 />
               );
