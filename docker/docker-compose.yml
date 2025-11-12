@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  cloudpaste:
+    image: ghcr.io/mrtian2016/cloudpaste:latest
+    container_name: cloudpaste
+    restart: unless-stopped
+
+    # 只需要映射一个目录！
+    volumes:
+      - ./data:/cloudpaste
+
+    # 暴露端口
+    ports:
+      - "5280:5280"
+
+  
