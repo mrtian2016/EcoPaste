@@ -1,5 +1,4 @@
-name: Build and Release
-
+name: Build Docker
 on:
   push:
     tags:
@@ -18,8 +17,6 @@ permissions:
 
 jobs:
   build-docker:
-    # 只在标准版本号时构建 Docker 镜像（不包含 beta 等后缀）
-    if: github.event_name == 'push' && !contains(github.ref_name, '-') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
