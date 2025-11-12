@@ -96,6 +96,8 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        // 添加对通知点击事件的支持
+        navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
             handler: "CacheFirst",

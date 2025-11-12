@@ -12,8 +12,6 @@ import {
 import { getDefaultSaveImagePath } from "tauri-plugin-clipboard-x-api";
 import { LISTEN_KEY } from "@/constants";
 import { getDatabase } from "@/database";
-import { writeToClipboard } from "@/plugins/clipboard";
-import type { DatabaseSchemaHistory } from "@/types/database";
 import { join } from "@/utils/path";
 import { downloadFile, uploadFile } from "./fileApi";
 import { syncManager } from "./SyncManager";
@@ -491,22 +489,22 @@ export class SyncEngine {
   /**
    * 将数据写入系统剪贴板
    */
-  private async writeToSystemClipboard(
-    data: DatabaseSchemaHistory,
-  ): Promise<void> {
-    try {
-      if (data.type === "image") {
-        // 获取完整路径
-        const saveImagePath = await getDefaultSaveImagePath();
-        const localPath = join(saveImagePath, data.value);
-        data.value = localPath;
-      }
-      await writeToClipboard(data);
-      LogInfo(`已写入系统剪贴板: ${data.type}`);
-    } catch (error) {
-      LogError(`写入剪贴板失败: ${error}`);
-    }
-  }
+  // private async writeToSystemClipboard(
+  //   data: DatabaseSchemaHistory,
+  // ): Promise<void> {
+  //   try {
+  //     if (data.type === "image") {
+  //       // 获取完整路径
+  //       const saveImagePath = await getDefaultSaveImagePath();
+  //       const localPath = join(saveImagePath, data.value);
+  //       data.value = localPath;
+  //     }
+  //     await writeToClipboard(data);
+  //     LogInfo(`已写入系统剪贴板: ${data.type}`);
+  //   } catch (error) {
+  //     LogError(`写入剪贴板失败: ${error}`);
+  //   }
+  // }
 
   /**
    * 处理远程删除

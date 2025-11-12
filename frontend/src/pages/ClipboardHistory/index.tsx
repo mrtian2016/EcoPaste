@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import AddClipboardModal from "@/components/AddClipboardModal";
 import ClipboardItem from "@/components/ClipboardItem";
 import DraggableFloatButton from "@/components/DraggableFloatButton";
+import { NotificationDebug } from "@/components/NotificationDebug";
 import Scrollbar from "@/components/Scrollbar";
 import UnoIcon from "@/components/UnoIcon";
 import {
@@ -234,6 +235,9 @@ const ClipboardHistory = () => {
           </Flex>
         </Flex>
       </div>
+
+      {/* 通知调试面板 - 开发环境显示 */}
+      {import.meta.env.DEV && <NotificationDebug />}
 
       {/* 悬浮按钮 - 新增剪贴板记录 */}
       <DraggableFloatButton

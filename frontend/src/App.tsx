@@ -7,6 +7,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useSnapshot } from "valtio";
 import PrivateRoute from "@/components/PrivateRoute";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
+import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import ClipboardHistory from "@/pages/ClipboardHistory";
 import Login from "@/pages/Login";
@@ -26,13 +27,7 @@ const queryClient = new QueryClient({
 });
 
 // AppContent 组件 - 在 QueryClientProvider 内部
-const AppContent = ({
-  isDark,
-  setIsDark: _setIsDark,
-}: {
-  isDark: boolean;
-  setIsDark: (value: boolean) => void;
-}) => {
+const AppContent = ({ isDark }: { isDark: boolean }) => {
   const { token, isAuthenticated } = useSnapshot(authStore);
 
   // 构建 WebSocket 连接地址
@@ -57,6 +52,11 @@ const AppContent = ({
   };
 
   const wsServerUrl = getWebSocketUrl();
+
+  // 通知权限管理 - 登录后自动请求
+  useNotificationPermission({
+    autoRequest: isAuthenticated, // 只在登录后请求通知权限
+  });
 
   // WebSocket 连接 - 自动处理剪贴板同步
   useWebSocket({
@@ -100,7 +100,7 @@ const AppContent = ({
 };
 
 const App = () => {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark] = useState(false);
 
   // 初始化时生成 Ant Design 颜色变量
   useEffect(() => {
@@ -117,7 +117,7 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppContent isDark={isDark} setIsDark={setIsDark} />
+      <AppContent isDark={isDark} />
     </QueryClientProvider>
   );
 };
