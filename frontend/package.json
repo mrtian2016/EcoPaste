@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@iconify-json/lucide": "^1.2.73",
     "@types/dompurify": "^3.0.5",
     "@types/node": "^22.18.11",
     "@types/react": "^18.3.26",

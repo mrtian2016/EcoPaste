@@ -6,6 +6,7 @@ import type { FC } from "react";
 import { useSnapshot } from "valtio";
 import { authStore } from "@/stores/auth";
 import type { ClipboardItem } from "@/types/clipboard";
+import { getServerBaseUrl } from "@/utils/api";
 
 interface ImageContentProps {
   item: ClipboardItem;
@@ -31,9 +32,7 @@ const ImageContent: FC<ImageContentProps> = ({ item }) => {
   }
 
   // 构建完整的图片 URL，添加 token 参数用于认证
-  const baseUrl =
-    import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") || "";
-  const imageUrl = `${baseUrl}${fileUrl}?token=${token}`;
+  const imageUrl = `${getServerBaseUrl()}${fileUrl}?token=${token}`;
 
   return (
     <Image

@@ -12,6 +12,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import ClipboardHistory from "@/pages/ClipboardHistory";
 import Login from "@/pages/Login";
 import { authStore } from "@/stores/auth";
+import { getWebSocketUrl } from "@/utils/api";
 import { generateColorVars } from "@/utils/color";
 
 const { defaultAlgorithm, darkAlgorithm } = theme;
@@ -31,27 +32,7 @@ const AppContent = ({ isDark }: { isDark: boolean }) => {
   const { token, isAuthenticated } = useSnapshot(authStore);
 
   // 构建 WebSocket 连接地址
-  const getWebSocketUrl = () => {
-    const isDev = import.meta.env.DEV;
-
-    let baseUrl: string;
-
-    if (isDev) {
-      // 开发环境：使用环境变量
-      baseUrl = import.meta.env.VITE_WS_URL || "ws://localhost:5281";
-    } else {
-      // 生产环境：从地址栏读取 host 和端口
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host = window.location.hostname;
-      const port = window.location.port ? `:${window.location.port}` : "";
-      baseUrl = `${protocol}//${host}${port}`;
-    }
-
-    // 统一拼接 /api/v1/ws
-    return `${baseUrl}/api/v1/ws`;
-  };
-
-  const wsServerUrl = getWebSocketUrl();
+  const wsServerUrl = `${getWebSocketUrl()}/api/v1/ws`;
 
   // 通知权限管理 - 登录后自动请求
   useNotificationPermission({

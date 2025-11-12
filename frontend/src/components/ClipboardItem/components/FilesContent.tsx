@@ -7,6 +7,7 @@ import { useSnapshot } from "valtio";
 import UnoIcon from "@/components/UnoIcon";
 import { authStore } from "@/stores/auth";
 import type { ClipboardItem } from "@/types/clipboard";
+import { getServerBaseUrl } from "@/utils/api";
 import {
   isAudioFile,
   isImageFile,
@@ -57,9 +58,7 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
 
   // 构建图片 URL 的辅助函数
   const buildImageUrl = (fileId: string) => {
-    const baseUrl =
-      import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") || "";
-    return `${baseUrl}/api/v1/files/download/${fileId}?token=${token}`;
+    return `${getServerBaseUrl()}/api/v1/files/download/${fileId}?token=${token}`;
   };
 
   // 检查是否全部是图片
@@ -85,9 +84,7 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
     setPreviewVisible(true);
 
     try {
-      const baseUrl =
-        import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") || "";
-      const fileUrl = `${baseUrl}/api/v1/files/download/${fileId}?token=${token}`;
+      const fileUrl = `${getServerBaseUrl()}/api/v1/files/download/${fileId}?token=${token}`;
 
       const response = await fetch(fileUrl);
       if (!response.ok) {
@@ -110,9 +107,7 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
     fileName: string,
     type: "video" | "audio",
   ) => {
-    const baseUrl =
-      import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") || "";
-    const mediaUrl = `${baseUrl}/api/v1/files/download/${fileId}?token=${token}`;
+    const mediaUrl = `${getServerBaseUrl()}/api/v1/files/download/${fileId}?token=${token}`;
     setMediaPreviewUrl(mediaUrl);
     setMediaPreviewTitle(fileName);
     setMediaType(type);
@@ -138,9 +133,7 @@ const FilesContent: FC<FilesContentProps> = ({ item }) => {
 
     // 图片预览
     if (isImage && file.file_id) {
-      const baseUrl =
-        import.meta.env.VITE_API_BASE_URL?.replace("/api/v1", "") || "";
-      const imageUrl = `${baseUrl}/api/v1/files/download/${file.file_id}?token=${token}`;
+      const imageUrl = `${getServerBaseUrl()}/api/v1/files/download/${file.file_id}?token=${token}`;
 
       return (
         <Image

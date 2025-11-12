@@ -97,7 +97,9 @@ export default defineConfig({
         clientsClaim: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         // 添加对通知点击事件的支持
+        // 排除 /api 路径，不让 Service Worker 缓存 API 请求
         navigateFallbackDenylist: [/^\/api/],
+        // 不缓存 API 请求，避免出现协议和域名问题
         runtimeCaching: [
           {
             handler: "CacheFirst",
@@ -127,21 +129,7 @@ export default defineConfig({
             },
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
           },
-          {
-            handler: "NetworkFirst",
-            options: {
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-              cacheName: "api-cache",
-              expiration: {
-                maxAgeSeconds: 60 * 5, // 5 minutes
-                maxEntries: 100,
-              },
-              networkTimeoutSeconds: 10,
-            },
-            urlPattern: /\/api\/.*/i,
-          },
+          // 移除 API 缓存配置，API 请求应该直接通过网络，不经过 Service Worker
           {
             handler: "CacheFirst",
             options: {

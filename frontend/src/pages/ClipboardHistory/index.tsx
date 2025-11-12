@@ -241,7 +241,7 @@ const ClipboardHistory = () => {
 
       {/* 悬浮按钮 - 新增剪贴板记录 */}
       <DraggableFloatButton
-        icon={<UnoIcon name="i-lucide:plus" />}
+        icon={<UnoIcon name="i-lucide:plus" size={28} />}
         onClick={() => setShowAddModal(true)}
       />
 

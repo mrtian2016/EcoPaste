@@ -10,8 +10,16 @@ export interface UnoIconProps extends HTMLAttributes<HTMLElement> {
 }
 
 const UnoIcon = forwardRef<HTMLElement, UnoIconProps>((props, ref) => {
-  const { name, className, size, color, active, hoverable, style, ...rest } =
-    props;
+  const {
+    name,
+    className,
+    size = 16,
+    color,
+    active,
+    hoverable,
+    style,
+    ...rest
+  } = props;
 
   return (
     <i
