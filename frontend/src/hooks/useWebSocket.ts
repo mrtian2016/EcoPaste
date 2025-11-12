@@ -52,7 +52,10 @@ export const useWebSocket = (options: UseWebSocketOptions) => {
       } catch (err) {
         setStatus("error");
         setError(err instanceof Error ? err.message : "连接失败");
-        message.error("WebSocket 连接失败");
+        message.open({
+          content: "WebSocket 连接失败",
+          type: "error",
+        });
       }
     };
 
@@ -82,7 +85,10 @@ export const useWebSocket = (options: UseWebSocketOptions) => {
       setError(err);
       // 如果是认证失败，显示错误提示
       if (err.includes("认证失败")) {
-        message.error(err);
+        message.open({
+          content: "WebSocket 连接失败",
+          type: "error",
+        });
       }
     });
 
@@ -112,7 +118,10 @@ export const useWebSocket = (options: UseWebSocketOptions) => {
 
       // 刷新剪贴板列表
       queryClient.invalidateQueries({ queryKey: [CLIPBOARD_QUERY_KEY] });
-      message.success("收到新的剪贴板内容");
+      message.open({
+        content: "收到新的剪贴板内容",
+        type: "success",
+      });
     });
 
     // 剪贴板删除通知
@@ -133,7 +142,10 @@ export const useWebSocket = (options: UseWebSocketOptions) => {
     // 历史清空通知
     wsClient.on("history_cleared", (_msg: WSServerMessage) => {
       queryClient.invalidateQueries({ queryKey: [CLIPBOARD_QUERY_KEY] });
-      message.info("剪贴板历史已被清空");
+      message.open({
+        content: "剪贴板历史已被清空",
+        type: "info",
+      });
     });
 
     // 时间戳更新通知

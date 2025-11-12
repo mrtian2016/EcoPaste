@@ -156,14 +156,16 @@ const ClipboardHistory = () => {
               justify="space-between"
             >
               {/* 分组标签 */}
-              <Scrollbar className="flex">
+              <Scrollbar className="flex text-base">
                 {groups.map((item) => {
                   const isChecked = item.id === group;
                   return (
                     <div id={item.id} key={item.id}>
                       <Tag.CheckableTag
                         checked={isChecked}
-                        className={clsx({ "bg-primary!": isChecked })}
+                        className={clsx("text-base!", {
+                          "bg-primary!": isChecked,
+                        })}
                         onChange={() => handleGroupChange(item.id)}
                       >
                         {item.name}
@@ -174,7 +176,7 @@ const ClipboardHistory = () => {
               </Scrollbar>
 
               {/* 设置和登出按钮 */}
-              <Flex align="center" className="text-color-2 text-lg" gap={4}>
+              <Flex align="center" className="text-color-2 text-xl" gap={4}>
                 <UnoIcon
                   hoverable
                   name="i-lets-icons:setting-alt-line"
