@@ -1,10 +1,10 @@
+/// <reference lib="webworker" />
 /**
  * 自定义 Service Worker
  * 处理通知点击事件和其他 PWA 功能
  */
 
 import { clientsClaim } from "workbox-core";
-/// <reference lib="webworker" />
 import { cleanupOutdatedCaches, precacheAndRoute } from "workbox-precaching";
 
 declare const self: ServiceWorkerGlobalScope;
@@ -20,7 +20,7 @@ self.skipWaiting();
 clientsClaim();
 
 // 监听通知点击事件
-self.addEventListener("notificationclick", (event) => {
+self.addEventListener("notificationclick", (event: NotificationEvent) => {
   event.notification.close();
 
   const urlToOpen = event.notification.data?.url || "/";
@@ -36,7 +36,9 @@ self.addEventListener("notificationclick", (event) => {
       // 如果已有窗口打开，则聚焦到该窗口
       for (const client of clientList) {
         if (client.url.includes(urlToOpen) && "focus" in client) {
-          await (client as WindowClient).focus();
+          await (
+            client as WindowClient & { focus(): Promise<WindowClient> }
+          ).focus();
           return;
         }
       }
@@ -59,7 +61,7 @@ self.addEventListener("notificationclose", () => {
 });
 
 // 如果需要支持推送通知（Push API），可以添加以下监听器
-self.addEventListener("push", (event) => {
+self.addEventListener("push", (event: PushEvent) => {
   if (!event.data) {
     return;
   }
@@ -84,7 +86,7 @@ self.addEventListener("push", (event) => {
 });
 
 // 监听来自主线程的消息（用于后台通知）
-self.addEventListener("message", (event) => {
+self.addEventListener("message", (event: ExtendableMessageEvent) => {
   // console.log("[SW] Received message:", event.data);
 
   if (event.data && event.data.type === "SHOW_NOTIFICATION") {
@@ -102,13 +104,13 @@ self.addEventListener("message", (event) => {
           requireInteraction: options.requireInteraction || false,
           silent: options.silent || false,
           tag: options.tag,
-          // @ts-expect-error - vibrate 是标准 API 但 TypeScript 定义可能不完整
+          // @ts-expect-error - vibrate 是标准 API 但 TypeScript 定义不完整
           vibrate: options.vibrate || [200, 100, 200],
         })
         .then(() => {
           // console.log("[SW] Notification shown successfully");
         })
-        .catch((_error) => {
+        .catch((_error: unknown) => {
           // console.error("[SW] Failed to show notification:", error);
         }),
     );
