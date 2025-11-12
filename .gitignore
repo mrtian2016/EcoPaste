@@ -23,3 +23,4 @@ auto-imports.d.ts
 *.njsproj
 *.sln
 *.sw?
+/docker/data

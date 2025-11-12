@@ -2,15 +2,11 @@ version: '3.8'
 
 services:
   ecopaste_cloud:
-    image: ghcr.io/mrtian2016/ecopaste:latest
+    image: mrtian2016/ecopaste:latest
     container_name: ecopaste_cloud
     restart: unless-stopped
-
-    # 只需要映射一个目录！
     volumes:
       - ./data:/ecopaste
-
-    # 暴露端口
     ports:
       - "5280:5280"
 

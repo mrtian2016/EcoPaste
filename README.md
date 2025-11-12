@@ -128,6 +128,21 @@ docker-compose up -d
 
 3. 服务将在 `http://your-server-ip:5280` 上运行
 
+#### 使用 Docker Run
+
+如果您不想使用 Docker Compose，也可以直接使用 docker run 命令：
+
+```bash
+docker run -d \
+  --name ecopaste_cloud \
+  --restart unless-stopped \
+  -v ./data:/ecopaste \
+  -p 5280:5280 \
+  ghcr.io/mrtian2016/ecopaste:latest
+```
+
+服务将在 `http://your-server-ip:5280` 上运行
+
 #### 配置客户端
 
 在 EcoPaste 的设置中配置云同步：
