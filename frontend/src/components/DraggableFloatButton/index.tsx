@@ -6,8 +6,43 @@ import { useEffect, useRef, useState } from "react";
 
 // 配置常量
 const BUTTON_SIZE = 60; // 按钮尺寸
-const EDGE_MARGIN_BOTTOM = 10; // 底部边距
-const EDGE_MARGIN_RIGHT = 5; // 右侧边距
+
+// 根据不同环境返回边距配置
+const getEdgeMargins = () => {
+  // 检测是否为 PWA 模式
+  const isPWA = window.matchMedia("(display-mode: standalone)").matches;
+
+  // 检测是否为移动设备
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    );
+
+  if (isPWA) {
+    // PWA 模式边距
+    return {
+      bottom: 20,
+      right: 10,
+    };
+  }
+
+  if (isMobile) {
+    // 手机浏览器模式边距
+    return {
+      bottom: 15,
+      right: 8,
+    };
+  }
+
+  // 桌面模式边距
+  return {
+    bottom: 10,
+    right: 80,
+  };
+};
+
+const { bottom: EDGE_MARGIN_BOTTOM, right: EDGE_MARGIN_RIGHT } =
+  getEdgeMargins();
 
 interface DraggableFloatButtonProps {
   icon: ReactNode;

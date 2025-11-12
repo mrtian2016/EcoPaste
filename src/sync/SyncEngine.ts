@@ -437,7 +437,7 @@ export class SyncEngine {
       }
 
       // 写入系统剪贴板
-      await this.writeToSystemClipboard(localData as DatabaseSchemaHistory);
+      // await this.writeToSystemClipboard(localData as DatabaseSchemaHistory);
 
       // 更新最新的远程同步时间
       this.updateLatestRemoteSyncTime(remoteData.createTime);
