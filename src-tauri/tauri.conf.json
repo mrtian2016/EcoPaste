@@ -80,8 +80,10 @@
       "requireLiteralLeadingDot": false
     },
     "updater": {
-      "endpoints": ["https://api.ecopaste.cn/update"],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDcwNEIyQkUwRjNEMTg4NgpSV1NHR0QwUHZySUVCeXFRQzZ4aEpNRWdFdThVQ2I4b2dSQktRcmNtV1dYTFJJV1h2VmVVZXBWSgo="
+      "endpoints": [
+        "https://github.com/mrtian2016/EcoPaste/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUwQzQ4RTM2MDA3RTI0OTYKUldTV0pINEFObzdFVU5kK3RxZXZ5U01oR1lYL2oxdWJnOWVhNHFjSXFETWlSUDNuWlY3K0cwTi8K"
     }
   },
   "productName": "EcoPaste",
