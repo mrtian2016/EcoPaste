@@ -2,7 +2,7 @@
  * 同步设置组件
  */
 
-import { Button, Input, message, Space, Tag } from "antd";
+import { Button, Input, InputNumber, message, Select, Space, Tag } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnapshot } from "valtio";
@@ -14,6 +14,8 @@ import {
   login,
   logout,
   register,
+  setAllowedFileExtensions,
+  setMaxSyncSize,
   setServerUrl,
   setSyncEnabled,
   syncConfig,
@@ -296,6 +298,74 @@ export const SyncSettings = () => {
             onChange={handleToggleSync}
             title={t("preference.sync.sync.label.sync_control")}
             value={config.enabled}
+          />
+        </ProList>
+      )}
+
+      {/* 同步限制设置 */}
+      {config.token && (
+        <ProList header={t("preference.sync.sync.label.sync_restrictions")}>
+          <ProListItem
+            description={
+              <div style={{ marginTop: "8px" }}>
+                <InputNumber
+                  addonAfter="MB"
+                  min={0}
+                  onChange={(value) => {
+                    const sizeInBytes = (value || 0) * 1024 * 1024;
+                    setMaxSyncSize(sizeInBytes);
+                    message.success(
+                      t("preference.sync.sync.message.config_saved"),
+                    );
+                  }}
+                  placeholder={t(
+                    "preference.sync.sync.hints.max_size_placeholder",
+                  )}
+                  step={1}
+                  style={{ width: "200px" }}
+                  value={(config.maxSyncSize || 0) / 1024 / 1024}
+                />
+                <div
+                  style={{ color: "#999", fontSize: "12px", marginTop: "4px" }}
+                >
+                  {t("preference.sync.sync.hints.max_size_description")}
+                </div>
+              </div>
+            }
+            title={t("preference.sync.sync.label.max_sync_size")}
+          />
+          <ProListItem
+            description={
+              <div style={{ marginTop: "8px" }}>
+                <Select
+                  mode="tags"
+                  onChange={(values) => {
+                    // 确保所有值都以 . 开头
+                    const normalized = values.map((v) =>
+                      v.startsWith(".") ? v : `.${v}`,
+                    );
+                    setAllowedFileExtensions(normalized);
+                    message.success(
+                      t("preference.sync.sync.message.config_saved"),
+                    );
+                  }}
+                  placeholder={t(
+                    "preference.sync.sync.hints.allowed_extensions_placeholder",
+                  )}
+                  style={{ width: "100%" }}
+                  tokenSeparators={[",", " "]}
+                  value={config.allowedFileExtensions || []}
+                />
+                <div
+                  style={{ color: "#999", fontSize: "12px", marginTop: "4px" }}
+                >
+                  {t(
+                    "preference.sync.sync.hints.allowed_extensions_description",
+                  )}
+                </div>
+              </div>
+            }
+            title={t("preference.sync.sync.label.allowed_file_extensions")}
           />
         </ProList>
       )}

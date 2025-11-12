@@ -71,8 +71,35 @@ const getSyncEnabled = (): boolean => {
   return stored === "true";
 };
 
+// 从 localStorage 获取最大同步文件大小(字节)
+const getMaxSyncSize = (): number => {
+  const stored = localStorage.getItem("eco_max_sync_size");
+  // 默认 10MB
+  return stored ? Number(stored) : 10 * 1024 * 1024;
+};
+
+// 从 localStorage 获取允许的文件后缀名
+const getAllowedFileExtensions = (): string[] => {
+  const stored = localStorage.getItem("eco_allowed_file_extensions");
+  // 默认允许常见的文档和图片格式
+  return stored
+    ? JSON.parse(stored)
+    : [
+        ".txt",
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".xls",
+        ".xlsx",
+        ".png",
+        ".jpg",
+        ".jpeg",
+      ];
+};
+
 // 同步配置
 export const syncConfig = proxy<SyncConfig>({
+  allowedFileExtensions: getAllowedFileExtensions(),
   autoReconnect: true,
   deviceId: getDeviceId(),
   // 初始化时不读取 Unknown Device，显示 Loading... 等待异步更新
@@ -81,7 +108,8 @@ export const syncConfig = proxy<SyncConfig>({
     return cached && cached !== "Unknown Device" ? cached : "Loading...";
   })(),
   enabled: getSyncEnabled(),
-  heartbeatInterval: 5000,
+  heartbeatInterval: 30000,
+  maxSyncSize: getMaxSyncSize(),
   reconnectInterval: 3000,
   serverUrl: getWebSocketUrl(getServerUrl()),
   token: localStorage.getItem("eco_sync_token"),
@@ -131,6 +159,21 @@ export const setSyncEnabled = (enabled: boolean) => {
   syncConfig.enabled = enabled;
 };
 
+// 工具函数：设置最大同步文件大小
+export const setMaxSyncSize = (size: number) => {
+  localStorage.setItem("eco_max_sync_size", size.toString());
+  syncConfig.maxSyncSize = size;
+};
+
+// 工具函数：设置允许的文件后缀名
+export const setAllowedFileExtensions = (extensions: string[]) => {
+  localStorage.setItem(
+    "eco_allowed_file_extensions",
+    JSON.stringify(extensions),
+  );
+  syncConfig.allowedFileExtensions = extensions;
+};
+
 // 监听 localStorage 变化，同步其他窗口的配置
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (event) => {
@@ -147,6 +190,23 @@ if (typeof window !== "undefined") {
     // 同步服务器地址
     if (event.key === "eco_server_url" && event.newValue !== null) {
       syncConfig.serverUrl = getWebSocketUrl(event.newValue);
+    }
+
+    // 同步最大文件大小
+    if (event.key === "eco_max_sync_size" && event.newValue !== null) {
+      syncConfig.maxSyncSize = Number(event.newValue);
+      LogInfo(
+        `跨窗口同步：最大文件大小更新为 ${(Number(event.newValue) / 1024 / 1024).toFixed(2)}MB`,
+      );
+    }
+
+    // 同步允许的文件后缀名
+    if (
+      event.key === "eco_allowed_file_extensions" &&
+      event.newValue !== null
+    ) {
+      syncConfig.allowedFileExtensions = JSON.parse(event.newValue);
+      LogInfo(`跨窗口同步：允许的文件类型更新为 ${event.newValue}`);
     }
   });
 }

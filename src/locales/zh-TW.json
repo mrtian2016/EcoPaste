@@ -350,16 +350,21 @@
           "switch_to_register": "切換到註冊"
         },
         "hints": {
+          "allowed_extensions_description": "輸入允許同步的檔案副檔名（例如：.pdf .docx），為空表示允許所有類型",
+          "allowed_extensions_placeholder": "輸入檔案副檔名，如 .pdf .txt .docx",
           "configure_server": "請配置伺服器位址",
           "configure_server_first": "請先配置伺服器位址",
           "input_credentials": "請輸入使用者名稱和密碼",
           "login_first": "請先登入",
+          "max_size_description": "設定同步檔案的最大大小限制，0 表示無限制",
+          "max_size_placeholder": "0 表示無限制",
           "server_example": "範例: http://192.168.1.199:5280 或 http://localhost:8000",
           "server_locked": "⚠️ 登入後無法更改伺服器位址，如需更改請先登出",
           "server_placeholder": "請輸入伺服器位址，例如: http://192.168.1.199:5280"
         },
         "label": {
           "account_info": "帳號資訊",
+          "allowed_file_extensions": "允許的檔案類型",
           "auto_reconnect": "自動重連",
           "connected_at": "連接時間",
           "debug_info": "偵錯資訊",
@@ -369,6 +374,7 @@
           "heartbeat_interval": "心跳間隔",
           "last_sync": "最後同步",
           "login_account": "登入帳號",
+          "max_sync_size": "最大檔案大小",
           "online_devices": "線上設備數",
           "online_devices_list": "線上設備",
           "password": "密碼",
@@ -378,11 +384,13 @@
           "server_address_required": "伺服器位址 *",
           "status": "狀態",
           "sync_control": "同步控制",
+          "sync_restrictions": "同步限制",
           "user": "使用者",
           "username": "使用者名稱",
           "websocket_address": "WebSocket 位址"
         },
         "message": {
+          "config_saved": "設定已儲存，將對新的同步操作生效",
           "connect_failed": "連接失敗",
           "login_failed": "登入失敗",
           "login_success": "登入成功",

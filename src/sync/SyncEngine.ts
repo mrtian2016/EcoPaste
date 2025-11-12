@@ -8,6 +8,7 @@ import {
   attachConsole,
   error as LogError,
   info as LogInfo,
+  warn as LogWarn,
 } from "@tauri-apps/plugin-log";
 import { getDefaultSaveImagePath } from "tauri-plugin-clipboard-x-api";
 import { LISTEN_KEY } from "@/constants";
@@ -170,6 +171,92 @@ export class SyncEngine {
     if (syncingFromRemote.has(data.id)) {
       LogInfo(`[syncInsert] 跳过远程同步的数据: ${data.id}`);
       return;
+    }
+
+    // 检查文件大小限制和文件类型过滤
+    if (data.type === "files" && data.value) {
+      try {
+        const files = JSON.parse(data.value);
+        const { stat } = await import("@tauri-apps/plugin-fs");
+        let totalSize = 0;
+        const filteredFiles = [];
+
+        for (const filePath of files) {
+          // 获取文件后缀名
+          const ext = filePath
+            .substring(filePath.lastIndexOf("."))
+            .toLowerCase();
+
+          // 检查文件后缀名是否在白名单中
+          if (
+            syncConfig.allowedFileExtensions &&
+            syncConfig.allowedFileExtensions.length > 0
+          ) {
+            const normalizedExtensions = syncConfig.allowedFileExtensions.map(
+              (e) => e.toLowerCase(),
+            );
+            if (!normalizedExtensions.includes(ext)) {
+              LogInfo(
+                `[syncInsert] 跳过不允许的文件类型: ${ext} (${filePath})`,
+              );
+              continue; // 跳过不允许的文件类型
+            }
+          }
+
+          // 检查文件大小
+          const fileStat = await stat(filePath);
+          totalSize += fileStat.size;
+
+          filteredFiles.push(filePath);
+        }
+
+        // 如果所有文件都被过滤掉了，跳过同步
+        if (filteredFiles.length === 0) {
+          LogInfo(`[syncInsert] 所有文件都被过滤，跳过同步 (id: ${data.id})`);
+          return;
+        }
+
+        // 检查总大小限制
+        if (syncConfig.maxSyncSize && syncConfig.maxSyncSize > 0) {
+          if (totalSize > syncConfig.maxSyncSize) {
+            LogInfo(
+              `[syncInsert] 跳过超过大小限制的文件: ${(totalSize / 1024 / 1024).toFixed(2)}MB > ${(syncConfig.maxSyncSize / 1024 / 1024).toFixed(2)}MB (id: ${data.id})`,
+            );
+            return;
+          }
+        }
+
+        // 更新 data.value 为过滤后的文件列表
+        if (filteredFiles.length !== files.length) {
+          data.value = JSON.stringify(filteredFiles);
+          LogInfo(
+            `[syncInsert] 文件列表已过滤: ${files.length} -> ${filteredFiles.length}`,
+          );
+        }
+      } catch (error) {
+        LogError(`[syncInsert] 检查文件失败: ${error}`);
+        // 如果无法获取文件信息，继续同步流程
+      }
+    } else if (data.type === "image") {
+      // 检查图片大小限制
+      if (syncConfig.maxSyncSize && syncConfig.maxSyncSize > 0) {
+        try {
+          const saveImagePath = await getDefaultSaveImagePath();
+          const localFilePath = join(saveImagePath, data.value);
+          const { stat } = await import("@tauri-apps/plugin-fs");
+          const fileStat = await stat(localFilePath);
+
+          if (fileStat.size > syncConfig.maxSyncSize) {
+            LogInfo(
+              `[syncInsert] 跳过超过大小限制的图片: ${(fileStat.size / 1024 / 1024).toFixed(2)}MB > ${(syncConfig.maxSyncSize / 1024 / 1024).toFixed(2)}MB (id: ${data.id})`,
+            );
+            return;
+          }
+        } catch (error) {
+          LogError(`[syncInsert] 检查图片大小失败: ${error}`);
+          // 如果无法获取文件大小，继续同步流程
+        }
+      }
     }
 
     try {
@@ -604,14 +691,114 @@ export class SyncEngine {
     LogInfo(`开始同步 ${pending.length} 条未同步记录`);
 
     let successCount = 0;
+    let skippedCount = 0;
+
     // 逐个同步
     for (const item of pending) {
       try {
+        // 先检查是否需要跳过（文件大小或类型不符合）
+        let shouldSkip = false;
+        let skipReason = "";
+
+        if (item.type === "files" && item.value) {
+          try {
+            const files =
+              typeof item.value === "string"
+                ? JSON.parse(item.value)
+                : item.value;
+            const { stat } = await import("@tauri-apps/plugin-fs");
+            let totalSize = 0;
+            let hasDisallowedType = false;
+
+            for (const filePath of files) {
+              // 检查文件后缀名
+              if (
+                syncConfig.allowedFileExtensions &&
+                syncConfig.allowedFileExtensions.length > 0
+              ) {
+                const ext = filePath
+                  .substring(filePath.lastIndexOf("."))
+                  .toLowerCase();
+                const normalizedExtensions =
+                  syncConfig.allowedFileExtensions.map((e) => e.toLowerCase());
+                if (!normalizedExtensions.includes(ext)) {
+                  hasDisallowedType = true;
+                  skipReason = `包含不允许的文件类型: ${ext}`;
+                  break;
+                }
+              }
+
+              // 检查文件大小
+              try {
+                const fileStat = await stat(filePath);
+                totalSize += fileStat.size;
+              } catch (err) {
+                // 文件可能已被删除
+                LogWarn(`无法访问文件: ${filePath}, ${err}`);
+              }
+            }
+
+            // 检查总大小
+            if (
+              !shouldSkip &&
+              syncConfig.maxSyncSize &&
+              syncConfig.maxSyncSize > 0
+            ) {
+              if (totalSize > syncConfig.maxSyncSize) {
+                shouldSkip = true;
+                skipReason = `文件大小 ${(totalSize / 1024 / 1024).toFixed(2)}MB 超过限制 ${(syncConfig.maxSyncSize / 1024 / 1024).toFixed(2)}MB`;
+              }
+            }
+
+            if (hasDisallowedType) {
+              shouldSkip = true;
+            }
+          } catch (err) {
+            LogError(`检查文件失败: ${item.id}, ${err}`);
+          }
+        } else if (item.type === "image" && typeof item.value === "string") {
+          // 检查图片大小
+          if (syncConfig.maxSyncSize && syncConfig.maxSyncSize > 0) {
+            try {
+              const saveImagePath = await getDefaultSaveImagePath();
+              const localFilePath = join(saveImagePath, item.value);
+              const { stat } = await import("@tauri-apps/plugin-fs");
+              const fileStat = await stat(localFilePath);
+
+              if (fileStat.size > syncConfig.maxSyncSize) {
+                shouldSkip = true;
+                skipReason = `图片大小 ${(fileStat.size / 1024 / 1024).toFixed(2)}MB 超过限制 ${(syncConfig.maxSyncSize / 1024 / 1024).toFixed(2)}MB`;
+              }
+            } catch (err) {
+              LogWarn(`无法访问图片: ${item.value}, ${err}`);
+            }
+          }
+        }
+
+        if (shouldSkip) {
+          // 标记为已同步，不再尝试
+          await db
+            .updateTable("history")
+            .set({ synced: 1 })
+            .where("id", "=", item.id)
+            .execute();
+
+          skippedCount++;
+          LogInfo(
+            `[syncPending] 跳过不符合同步条件的记录: ${item.id}, 原因: ${skipReason}`,
+          );
+          continue;
+        }
+
         await this.syncInsert(item);
         successCount++;
       } catch (error) {
         LogError(`同步失败: ${item.id}, error: ${error}`);
       }
+    }
+
+    if (skippedCount > 0) {
+      LogInfo(`跳过 ${skippedCount} 条不符合同步条件的记录`);
     }
 
     // 更新待同步计数

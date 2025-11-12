@@ -46,6 +46,8 @@ export {
   getHttpServerUrl,
   isLoggedIn,
   saveToken,
+  setAllowedFileExtensions,
+  setMaxSyncSize,
   setServerUrl,
   setSyncEnabled,
   syncConfig,

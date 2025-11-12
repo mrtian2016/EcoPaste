@@ -43,7 +43,7 @@ class WebSocketClient {
       deviceId: this.getOrCreateDeviceId(),
       deviceName: "Web Client",
       heartbeatInterval: 30000, // 30秒
-      reconnectInterval: 5000, // 5秒
+      reconnectInterval: 3000, // 5秒
       serverUrl: "",
       token: null,
     };

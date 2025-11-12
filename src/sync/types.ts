@@ -29,6 +29,8 @@ export interface SyncConfig {
   autoReconnect: boolean;
   reconnectInterval: number; // 毫秒
   heartbeatInterval: number; // 毫秒
+  maxSyncSize?: number; // 最大同步文件大小(字节), 0 表示无限制
+  allowedFileExtensions?: string[]; // 允许同步的文件后缀名列表(白名单)，为空表示允许所有
 }
 
 // ========== 同步状态 ==========

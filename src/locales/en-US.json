@@ -350,16 +350,21 @@
           "switch_to_register": "Switch to Register"
         },
         "hints": {
+          "allowed_extensions_description": "Enter allowed file extensions (e.g., .pdf .docx), empty means allow all types",
+          "allowed_extensions_placeholder": "Enter file extensions, e.g. .pdf .txt .docx",
           "configure_server": "Please configure server address",
           "configure_server_first": "Please configure server address first",
           "input_credentials": "Please enter username and password",
           "login_first": "Please login first",
+          "max_size_description": "Set maximum file size limit for sync, 0 means unlimited",
+          "max_size_placeholder": "0 means unlimited",
           "server_example": "Example: http://192.168.1.199:5280 or http://localhost:8000",
           "server_locked": "⚠️ Cannot change server address after login. Please logout first.",
           "server_placeholder": "Enter server address, e.g.: http://192.168.1.199:5280"
         },
         "label": {
           "account_info": "Account Info",
+          "allowed_file_extensions": "Allowed File Types",
           "auto_reconnect": "Auto Reconnect",
           "connected_at": "Connected At",
           "debug_info": "Debug Info",
@@ -369,6 +374,7 @@
           "heartbeat_interval": "Heartbeat Interval",
           "last_sync": "Last Sync",
           "login_account": "Login Account",
+          "max_sync_size": "Max File Size",
           "online_devices": "Online Devices",
           "online_devices_list": "Online Devices",
           "password": "Password",
@@ -378,11 +384,13 @@
           "server_address_required": "Server Address *",
           "status": "Status",
           "sync_control": "Sync Control",
+          "sync_restrictions": "Sync Restrictions",
           "user": "User",
           "username": "Username",
           "websocket_address": "WebSocket Address"
         },
         "message": {
+          "config_saved": "Configuration saved, will apply to new sync operations",
           "connect_failed": "Connection failed",
           "login_failed": "Login failed",
           "login_success": "Login successful",

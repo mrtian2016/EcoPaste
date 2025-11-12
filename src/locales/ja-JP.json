@@ -350,16 +350,21 @@
           "switch_to_register": "登録に切り替え"
         },
         "hints": {
+          "allowed_extensions_description": "同期を許可するファイル拡張子を入力（例：.pdf .docx）、空の場合はすべて許可",
+          "allowed_extensions_placeholder": "ファイル拡張子を入力、例 .pdf .txt .docx",
           "configure_server": "サーバーアドレスを設定してください",
           "configure_server_first": "最初にサーバーアドレスを設定してください",
           "input_credentials": "ユーザー名とパスワードを入力してください",
           "login_first": "最初にログインしてください",
+          "max_size_description": "同期するファイルの最大サイズ制限を設定。0は無制限を意味します",
+          "max_size_placeholder": "0は無制限",
           "server_example": "例: http://192.168.1.199:5280 または http://localhost:8000",
           "server_locked": "⚠️ ログイン後はサーバーアドレスを変更できません。変更する場合は、まずログアウトしてください",
           "server_placeholder": "サーバーアドレスを入力してください。例: http://192.168.1.199:5280"
         },
         "label": {
           "account_info": "アカウント情報",
+          "allowed_file_extensions": "許可されるファイルタイプ",
           "auto_reconnect": "自動再接続",
           "connected_at": "接続時刻",
           "debug_info": "デバッグ情報",
@@ -369,6 +374,7 @@
           "heartbeat_interval": "ハートビート間隔",
           "last_sync": "最終同期",
           "login_account": "ログインアカウント",
+          "max_sync_size": "最大ファイルサイズ",
           "online_devices": "オンラインデバイス数",
           "online_devices_list": "オンラインデバイス",
           "password": "パスワード",
@@ -378,11 +384,13 @@
           "server_address_required": "サーバーアドレス *",
           "status": "ステータス",
           "sync_control": "同期コントロール",
+          "sync_restrictions": "同期制限",
           "user": "ユーザー",
           "username": "ユーザー名",
           "websocket_address": "WebSocket アドレス"
         },
         "message": {
+          "config_saved": "設定を保存しました。新しい同期操作に適用されます",
           "connect_failed": "接続に失敗しました",
           "login_failed": "ログインに失敗しました",
           "login_success": "ログインに成功しました",

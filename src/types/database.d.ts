@@ -16,6 +16,12 @@ export type DatabaseSchemaHistory<
   createTime: string;
   note?: string;
   subtype?: DatabaseSchemaHistorySubtype;
+  // 同步相关字段
+  device_id?: string;
+  device_name?: string;
+  content_hash?: string;
+  synced?: number; // 0=未同步 1=已同步
+  updated_at?: string;
 };
 
 export type DatabaseSchemaGroupId = LiteralUnion<
