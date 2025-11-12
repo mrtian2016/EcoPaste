@@ -3,11 +3,21 @@
  * 处理通知点击事件和其他 PWA 功能
  */
 
+import { clientsClaim } from "workbox-core";
 /// <reference lib="webworker" />
+import { cleanupOutdatedCaches, precacheAndRoute } from "workbox-precaching";
+
 declare const self: ServiceWorkerGlobalScope;
 
-// Workbox 配置 - 在 vite-plugin-pwa 中处理
-// 此处只添加自定义事件监听器
+// 清理过期缓存
+cleanupOutdatedCaches();
+
+// 预缓存资源 - self.__WB_MANIFEST 会被 vite-plugin-pwa 自动注入
+precacheAndRoute(self.__WB_MANIFEST || []);
+
+// 立即控制所有客户端
+self.skipWaiting();
+clientsClaim();
 
 // 监听通知点击事件
 self.addEventListener("notificationclick", (event) => {
@@ -73,8 +83,38 @@ self.addEventListener("push", (event) => {
   }
 });
 
-// 跳过等待，立即激活新的 Service Worker
+// 监听来自主线程的消息（用于后台通知）
 self.addEventListener("message", (event) => {
+  // console.log("[SW] Received message:", event.data);
+
+  if (event.data && event.data.type === "SHOW_NOTIFICATION") {
+    const { title, options } = event.data;
+
+    // console.log("[SW] Showing notification:", title, options);
+
+    event.waitUntil(
+      self.registration
+        .showNotification(title, {
+          badge: options.badge || "/android/android-launchericon-96-96.png",
+          body: options.body,
+          data: options.data,
+          icon: options.icon || "/android/android-launchericon-192-192.png",
+          requireInteraction: options.requireInteraction || false,
+          silent: options.silent || false,
+          tag: options.tag,
+          // @ts-expect-error - vibrate 是标准 API 但 TypeScript 定义可能不完整
+          vibrate: options.vibrate || [200, 100, 200],
+        })
+        .then(() => {
+          // console.log("[SW] Notification shown successfully");
+        })
+        .catch((_error) => {
+          // console.error("[SW] Failed to show notification:", error);
+        }),
+    );
+  }
+
+  // 跳过等待，立即激活新的 Service Worker
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }

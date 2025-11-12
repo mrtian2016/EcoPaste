@@ -84,6 +84,7 @@ export const canSendNotification = (): boolean => {
 
 /**
  * 发送通知（通过 Service Worker）
+ * 使用消息传递机制确保后台也能显示通知
  */
 export const sendNotification = async (
   config: NotificationConfig,
@@ -98,20 +99,46 @@ export const sendNotification = async (
     if ("serviceWorker" in navigator) {
       const registration = await navigator.serviceWorker.ready;
 
-      await registration.showNotification(config.title, {
-        badge: config.badge || "/android/android-launchericon-96-96.png",
-        body: config.body,
-        data: config.data,
-        icon: config.icon || "/android/android-launchericon-192-192.png",
-        requireInteraction: config.requireInteraction || false,
-        silent: config.silent || false,
-        tag: config.tag,
-        // @ts-expect-error - vibrate 是标准 API 但 TypeScript 定义可能不完整
-        vibrate: config.vibrate || [200, 100, 200],
-      });
+      // console.log("[Notification] SW registration:", registration);
+      // console.log("[Notification] SW active:", registration.active);
+
+      // 优先通过 Service Worker 消息机制发送通知
+      // 这样即使页面在后台也能正常显示通知
+      if (registration.active) {
+        // console.log("[Notification] Sending message to SW:", config.title);
+        registration.active.postMessage({
+          options: {
+            badge: config.badge || "/android/android-launchericon-96-96.png",
+            body: config.body,
+            data: config.data,
+            icon: config.icon || "/android/android-launchericon-192-192.png",
+            requireInteraction: config.requireInteraction || false,
+            silent: config.silent || false,
+            tag: config.tag,
+            vibrate: config.vibrate || [200, 100, 200],
+          },
+          title: config.title,
+          type: "SHOW_NOTIFICATION",
+        });
+        // console.log("[Notification] Message sent to SW");
+      } else {
+        // 如果 Service Worker 未激活，使用传统方式
+        // console.log("[Notification] SW not active, using direct method");
+        await registration.showNotification(config.title, {
+          badge: config.badge || "/android/android-launchericon-96-96.png",
+          body: config.body,
+          data: config.data,
+          icon: config.icon || "/android/android-launchericon-192-192.png",
+          requireInteraction: config.requireInteraction || false,
+          silent: config.silent || false,
+          tag: config.tag,
+          // @ts-expect-error - vibrate 是标准 API 但 TypeScript 定义可能不完整
+          vibrate: config.vibrate || [200, 100, 200],
+        });
+      }
     }
-  } catch {
-    // 发送通知失败,静默处理
+  } catch (_error) {
+    // console.error("[Notification] Failed to send notification:", error);
   }
 };
 

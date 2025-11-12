@@ -24,11 +24,15 @@ export default defineConfig({
         navigateFallback: "index.html",
         type: "module",
       },
+      filename: "sw-custom.ts",
       includeAssets: [
         "ios/180.png",
         "android/android-launchericon-192-192.png",
         "android/android-launchericon-512-512.png",
       ],
+      injectManifest: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+      },
       manifest: {
         background_color: "#ffffff",
         categories: ["productivity", "utilities"],
@@ -92,61 +96,8 @@ export default defineConfig({
         theme_color: "#1890ff",
       },
       registerType: "autoUpdate",
-      workbox: {
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
-        // 添加对通知点击事件的支持
-        // 排除 /api 路径，不让 Service Worker 缓存 API 请求
-        navigateFallbackDenylist: [/^\/api/],
-        // 不缓存 API 请求，避免出现协议和域名问题
-        runtimeCaching: [
-          {
-            handler: "CacheFirst",
-            options: {
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-              cacheName: "google-fonts-cache",
-              expiration: {
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-                maxEntries: 10,
-              },
-            },
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-          },
-          {
-            handler: "CacheFirst",
-            options: {
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-              cacheName: "gstatic-fonts-cache",
-              expiration: {
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-                maxEntries: 10,
-              },
-            },
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-          },
-          // 移除 API 缓存配置，API 请求应该直接通过网络，不经过 Service Worker
-          {
-            handler: "CacheFirst",
-            options: {
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-              cacheName: "images-cache",
-              expiration: {
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-                maxEntries: 50,
-              },
-            },
-            urlPattern: /\.(png|jpg|jpeg|svg|gif|webp)$/i,
-          },
-        ],
-        skipWaiting: true,
-      },
+      srcDir: "src",
+      strategies: "injectManifest",
     }),
   ],
   resolve: {
