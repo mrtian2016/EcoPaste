@@ -338,6 +338,69 @@
         "title": "ショートカットキー"
       }
     },
+    "sync": {
+      "sync": {
+        "button": {
+          "disable_sync": "同期を無効化",
+          "enable_sync": "同期を有効化",
+          "login": "ログイン",
+          "logout": "ログアウト",
+          "register": "登録",
+          "switch_to_login": "ログインに切り替え",
+          "switch_to_register": "登録に切り替え"
+        },
+        "hints": {
+          "configure_server": "サーバーアドレスを設定してください",
+          "configure_server_first": "最初にサーバーアドレスを設定してください",
+          "input_credentials": "ユーザー名とパスワードを入力してください",
+          "login_first": "最初にログインしてください",
+          "server_example": "例: http://192.168.1.199:5280 または http://localhost:8000",
+          "server_locked": "⚠️ ログイン後はサーバーアドレスを変更できません。変更する場合は、まずログアウトしてください",
+          "server_placeholder": "サーバーアドレスを入力してください。例: http://192.168.1.199:5280"
+        },
+        "label": {
+          "account_info": "アカウント情報",
+          "auto_reconnect": "自動再接続",
+          "connected_at": "接続時刻",
+          "debug_info": "デバッグ情報",
+          "device_id": "デバイス ID",
+          "device_name": "デバイス名",
+          "error": "エラー",
+          "heartbeat_interval": "ハートビート間隔",
+          "last_sync": "最終同期",
+          "login_account": "ログインアカウント",
+          "online_devices": "オンラインデバイス数",
+          "online_devices_list": "オンラインデバイス",
+          "password": "パスワード",
+          "reconnect_interval": "再接続間隔",
+          "register_account": "アカウント登録",
+          "server_address": "サーバーアドレス",
+          "server_address_required": "サーバーアドレス *",
+          "status": "ステータス",
+          "sync_control": "同期コントロール",
+          "user": "ユーザー",
+          "username": "ユーザー名",
+          "websocket_address": "WebSocket アドレス"
+        },
+        "message": {
+          "connect_failed": "接続に失敗しました",
+          "login_failed": "ログインに失敗しました",
+          "login_success": "ログインに成功しました",
+          "logout_success": "ログアウトしました",
+          "register_failed": "登録に失敗しました",
+          "register_success": "登録に成功しました",
+          "sync_disabled": "同期が無効になりました",
+          "sync_enabled": "同期が有効になりました"
+        },
+        "status": {
+          "connected": "接続済み",
+          "connecting": "接続中...",
+          "disconnected": "未接続",
+          "error": "接続エラー"
+        },
+        "title": "クラウド同期"
+      }
+    },
     "title": "環境設定"
   }
 }

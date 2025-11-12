@@ -338,6 +338,69 @@
         "title": "快捷鍵"
       }
     },
+    "sync": {
+      "sync": {
+        "button": {
+          "disable_sync": "停用同步",
+          "enable_sync": "啟用同步",
+          "login": "登入",
+          "logout": "登出",
+          "register": "註冊",
+          "switch_to_login": "切換到登入",
+          "switch_to_register": "切換到註冊"
+        },
+        "hints": {
+          "configure_server": "請配置伺服器位址",
+          "configure_server_first": "請先配置伺服器位址",
+          "input_credentials": "請輸入使用者名稱和密碼",
+          "login_first": "請先登入",
+          "server_example": "範例: http://192.168.1.199:5280 或 http://localhost:8000",
+          "server_locked": "⚠️ 登入後無法更改伺服器位址，如需更改請先登出",
+          "server_placeholder": "請輸入伺服器位址，例如: http://192.168.1.199:5280"
+        },
+        "label": {
+          "account_info": "帳號資訊",
+          "auto_reconnect": "自動重連",
+          "connected_at": "連接時間",
+          "debug_info": "偵錯資訊",
+          "device_id": "設備 ID",
+          "device_name": "設備名稱",
+          "error": "錯誤",
+          "heartbeat_interval": "心跳間隔",
+          "last_sync": "最後同步",
+          "login_account": "登入帳號",
+          "online_devices": "線上設備數",
+          "online_devices_list": "線上設備",
+          "password": "密碼",
+          "reconnect_interval": "重連間隔",
+          "register_account": "註冊帳號",
+          "server_address": "伺服器位址",
+          "server_address_required": "伺服器位址 *",
+          "status": "狀態",
+          "sync_control": "同步控制",
+          "user": "使用者",
+          "username": "使用者名稱",
+          "websocket_address": "WebSocket 位址"
+        },
+        "message": {
+          "connect_failed": "連接失敗",
+          "login_failed": "登入失敗",
+          "login_success": "登入成功",
+          "logout_success": "已登出",
+          "register_failed": "註冊失敗",
+          "register_success": "註冊成功",
+          "sync_disabled": "同步已停用",
+          "sync_enabled": "同步已啟用"
+        },
+        "status": {
+          "connected": "已連接",
+          "connecting": "連接中...",
+          "disconnected": "未連接",
+          "error": "連接錯誤"
+        },
+        "title": "雲端同步"
+      }
+    },
     "title": "偏好設定"
   }
 }
