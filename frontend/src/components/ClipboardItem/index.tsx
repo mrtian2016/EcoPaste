@@ -213,8 +213,8 @@ const ClipboardItem = ({ item, searchText }: ClipboardItemProps) => {
     >
       {/* Header */}
       <Flex className="text-color-2" gap="small" justify="space-between">
-        <Scrollbar thumbSize={0}>
-          <Flex className="flex-1 whitespace-nowrap text-xs" gap="small">
+        <Scrollbar className="min-w-0 flex-1" thumbSize={0}>
+          <Flex className="whitespace-nowrap text-xs" gap="small">
             <span>{getTypeText()}</span>
             <span>{getCountText()}</span>
             {item.width && item.height && (
@@ -229,7 +229,7 @@ const ClipboardItem = ({ item, searchText }: ClipboardItemProps) => {
         {/* 操作按钮 */}
         <Flex
           align="center"
-          className="transition"
+          className="shrink-0 transition"
           gap={12}
           onDoubleClick={(event) => event.stopPropagation()}
         >
