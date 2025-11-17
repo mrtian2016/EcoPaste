@@ -31,7 +31,6 @@ const ClipboardHistory = () => {
   const queryClient = useQueryClient();
   const [group, setGroup] = useState<GroupType>("all");
   const [searchText, setSearchText] = useState("");
-  const [activeId, setActiveId] = useState<string>();
   const [showAddModal, setShowAddModal] = useState(false);
   const [allItems, setAllItems] = useState<ClipboardItemType[]>([]);
   const [hasMore, setHasMore] = useState(true);
@@ -53,7 +52,7 @@ const ClipboardHistory = () => {
   // 处理数据更新
   useEffect(() => {
     if (data) {
-      if (params.page === 1) {
+      if (debouncedParams.page === 1) {
         // 第一页，重置数据
         setAllItems(data.items || []);
       } else {
@@ -66,12 +65,16 @@ const ClipboardHistory = () => {
           return [...prev, ...newItems];
         });
       }
-      // 判断是否还有更多数据：当前页 * 每页数量 < 总数
-      const hasMoreData = data.page * data.page_size < data.total;
+      // 判断是否还有更多数据
+      // 方法1：当前页 * 每页数量 < 总数
+      // 方法2：检查返回的 items 数量是否等于 page_size
+      const hasMoreData =
+        data.page * data.page_size < data.total &&
+        (data.items?.length || 0) >= data.page_size;
       setHasMore(hasMoreData);
       isLoadingMoreRef.current = false;
     }
-  }, [data, params.page]);
+  }, [data, debouncedParams.page]);
 
   // 滚动到底部加载更多
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -79,9 +82,10 @@ const ClipboardHistory = () => {
     const scrollBottom =
       target.scrollHeight - target.scrollTop - target.clientHeight;
 
-    // 当距离底部小于 100px 且还有更多数据且不在加载中时，加载下一页
+    // 当距离底部小于 200px 且还有更多数据且不在加载中时，加载下一页
+    // 增加阈值以改善移动端体验
     if (
-      scrollBottom < 100 &&
+      scrollBottom < 200 &&
       hasMore &&
       !isLoading &&
       !isLoadingMoreRef.current
@@ -204,12 +208,7 @@ const ClipboardHistory = () => {
                 <div className="pb-20">
                   {allItems.map((item, index) => (
                     <div className={index !== 0 ? "pt-3" : ""} key={item.id}>
-                      <ClipboardItem
-                        isActive={activeId === item.id}
-                        item={item}
-                        onClick={() => setActiveId(item.id)}
-                        searchText={searchText}
-                      />
+                      <ClipboardItem item={item} searchText={searchText} />
                     </div>
                   ))}
                   {/* 加载更多指示器 */}

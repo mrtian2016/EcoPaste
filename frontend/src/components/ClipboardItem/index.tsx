@@ -2,8 +2,7 @@
  * 剪贴板列表项组件 - 完全对齐 EcoPaste UI
  */
 import "dayjs/locale/zh-cn";
-import { Flex, Popconfirm } from "antd";
-import clsx from "clsx";
+import { Flex, message, Popconfirm } from "antd";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Marker } from "react-mark.js";
@@ -27,16 +26,9 @@ dayjs.locale("zh-cn");
 interface ClipboardItemProps {
   item: ClipboardItemType;
   searchText?: string;
-  isActive?: boolean;
-  onClick?: () => void;
 }
 
-const ClipboardItem = ({
-  item,
-  searchText,
-  isActive,
-  onClick,
-}: ClipboardItemProps) => {
+const ClipboardItem = ({ item, searchText }: ClipboardItemProps) => {
   const deleteMutation = useDeleteClipboardItem();
   const toggleFavoriteMutation = useToggleFavorite();
 
@@ -144,9 +136,47 @@ const ClipboardItem = ({
     deleteMutation.mutate(item.id);
   };
 
-  // 复制
-  const handleCopy = () => {
-    navigator.clipboard.writeText(item.value);
+  // 复制 - 兼容移动端
+  const handleCopy = async () => {
+    try {
+      let textToCopy = item.value;
+
+      if (item.type === "html") {
+        // HTML 类型复制为纯文本
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(item.value, "text/html");
+        textToCopy = doc.body.textContent || "";
+      }
+
+      // 优先使用 Clipboard API
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        // 降级方案：使用 textarea 方式（兼容旧浏览器和某些移动端）
+        const textarea = document.createElement("textarea");
+        textarea.value = textToCopy;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        textarea.style.top = "0";
+        textarea.style.left = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+
+        try {
+          const successful = document.execCommand("copy");
+          if (!successful) {
+            throw new Error("execCommand failed");
+          }
+        } finally {
+          document.body.removeChild(textarea);
+        }
+      }
+
+      message.success("复制成功");
+    } catch {
+      message.error("复制失败");
+    }
   };
 
   const operationButtons = [
@@ -154,7 +184,7 @@ const ClipboardItem = ({
       icon: "i-hugeicons:copy-01",
       key: "copy",
       onClick: handleCopy,
-      show: item.type === "text",
+      show: item.type === "text" || item.type === "html",
       title: "复制",
     },
     {
@@ -177,14 +207,8 @@ const ClipboardItem = ({
 
   return (
     <Flex
-      className={clsx(
-        "group b hover:b-primary-5 b-color-2 mx-3 max-h-30 rounded-md p-1.5 transition",
-        {
-          "b-primary bg-primary-1": isActive,
-        },
-      )}
+      className="group b b-color-2 mx-3 max-h-30 select-none rounded-md p-1.5"
       gap={4}
-      onClick={onClick}
       vertical
     >
       {/* Header */}
@@ -205,10 +229,8 @@ const ClipboardItem = ({
         {/* 操作按钮 */}
         <Flex
           align="center"
-          className={clsx("opacity-0 transition group-hover:opacity-100", {
-            "opacity-100": isActive,
-          })}
-          gap={6}
+          className="transition"
+          gap={12}
           onDoubleClick={(event) => event.stopPropagation()}
         >
           {operationButtons
@@ -224,28 +246,36 @@ const ClipboardItem = ({
                     onConfirm={button.onClick}
                     title="确认删除"
                   >
-                    <UnoIcon
-                      className={button.className}
-                      hoverable
-                      name={button.icon}
-                      title={button.title}
-                    />
+                    <div className="cursor-pointer p-2">
+                      <UnoIcon
+                        className={button.className}
+                        hoverable
+                        name={button.icon}
+                        size={22}
+                        title={button.title}
+                      />
+                    </div>
                   </Popconfirm>
                 );
               }
 
               return (
-                <UnoIcon
-                  className={button.className}
-                  hoverable
+                <div
+                  className="cursor-pointer p-2"
                   key={button.key}
-                  name={button.icon}
                   onClick={(e) => {
                     e.stopPropagation();
                     button.onClick();
                   }}
-                  title={button.title}
-                />
+                >
+                  <UnoIcon
+                    className={button.className}
+                    hoverable
+                    name={button.icon}
+                    size={22}
+                    title={button.title}
+                  />
+                </div>
               );
             })}
         </Flex>
