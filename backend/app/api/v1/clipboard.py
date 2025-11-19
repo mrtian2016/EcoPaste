@@ -12,6 +12,7 @@ from pathlib import Path
 import random
 import string
 from nanoid import generate
+import json
 
 from app.api.deps import get_db
 from app.models.db_models import ClipboardHistory, User as DBUser, Device
@@ -30,6 +31,43 @@ router = APIRouter()
 
 # 文件存储目录
 UPLOAD_DIR = Path(settings.UPLOAD_DIR)
+
+# 图片文件扩展名列表
+IMAGE_EXTENSIONS = [
+    ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp",
+    ".svg", ".ico", ".heic", ".heif"
+]
+
+
+def is_image_file(filename: str) -> bool:
+    """判断文件是否为图片"""
+    if not filename:
+        return False
+    lower_name = filename.lower()
+    return any(lower_name.endswith(ext) for ext in IMAGE_EXTENSIONS)
+
+
+def filter_non_image_files(remote_files_json: str) -> str:
+    """
+    过滤掉文件列表中的图片文件，只保留非图片文件
+
+    Args:
+        remote_files_json: 文件列表的 JSON 字符串
+
+    Returns:
+        过滤后的文件列表 JSON 字符串
+    """
+    try:
+        files = json.loads(remote_files_json)
+        # 过滤掉图片文件
+        non_image_files = [
+            file for file in files
+            if not is_image_file(file.get("original_name") or file.get("name", ""))
+        ]
+        return json.dumps(non_image_files)
+    except Exception as e:
+        logger.warning(f"过滤图片文件失败: {e}")
+        return remote_files_json
 
 
 def delete_file_if_exists(file_id: str) -> bool:
@@ -174,9 +212,9 @@ async def create_clipboard_item(
                 if existing_item.file_name:
                     clipboard_data["remote_file_name"] = existing_item.file_name
             
-            # 对于文件列表类型，添加remote_files
+            # 对于文件列表类型，添加remote_files（过滤掉图片）
             if existing_item.type == "files" and existing_item.value:
-                clipboard_data["remote_files"] = existing_item.value
+                clipboard_data["remote_files"] = filter_non_image_files(existing_item.value)
 
             # 推送到队列进行广播（通知时间戳更新）
             await manager.push_to_queue(
@@ -237,10 +275,10 @@ async def create_clipboard_item(
             if db_item.file_name:
                 clipboard_data["remote_file_name"] = db_item.file_name
         
-        # 对于文件列表类型，添加remote_files
+        # 对于文件列表类型，添加remote_files（过滤掉图片）
         if db_item.type == "files" and db_item.value:
             # value存储的是remote_files的JSON字符串
-            clipboard_data["remote_files"] = db_item.value
+            clipboard_data["remote_files"] = filter_non_image_files(db_item.value)
 
         # 推送到队列进行广播
         await manager.push_to_queue(
@@ -864,9 +902,9 @@ async def fetch_sync_updates(
                 if item.file_name:
                     item_data["remote_file_name"] = item.file_name
             
-            # 对于文件列表类型，添加 remote_files
+            # 对于文件列表类型，添加 remote_files（过滤掉图片）
             if item.type == "files" and item.value:
-                item_data["remote_files"] = item.value
+                item_data["remote_files"] = filter_non_image_files(item.value)
             
             items_list.append(item_data)
         

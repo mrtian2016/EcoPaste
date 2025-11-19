@@ -6,13 +6,16 @@ import { Flex, message, Popconfirm } from "antd";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Marker } from "react-mark.js";
+import { useSnapshot } from "valtio";
 import Scrollbar from "@/components/Scrollbar";
 import UnoIcon from "@/components/UnoIcon";
 import {
   useDeleteClipboardItem,
   useToggleFavorite,
 } from "@/hooks/useClipboardHistory";
+import { authStore } from "@/stores/auth";
 import type { ClipboardItem as ClipboardItemType } from "@/types/clipboard";
+import { getServerBaseUrl } from "@/utils/api";
 import { isImageFile, isTextFile } from "@/utils/file";
 import FilesContent from "./components/FilesContent";
 import HtmlContent from "./components/HtmlContent";
@@ -31,6 +34,7 @@ interface ClipboardItemProps {
 const ClipboardItem = ({ item, searchText }: ClipboardItemProps) => {
   const deleteMutation = useDeleteClipboardItem();
   const toggleFavoriteMutation = useToggleFavorite();
+  const { token } = useSnapshot(authStore);
 
   // 获取类型文本
   const getTypeText = () => {
@@ -179,6 +183,96 @@ const ClipboardItem = ({ item, searchText }: ClipboardItemProps) => {
     }
   };
 
+  // 下载文件
+  const handleDownload = async () => {
+    try {
+      if (item.type === "image") {
+        // 下载图片
+        let fileId = item.value;
+        // 如果是完整路径，提取文件名
+        if (fileId.includes("/")) {
+          fileId = fileId.split("/").pop() || fileId;
+        }
+
+        const downloadUrl = `${getServerBaseUrl()}/api/v1/files/download/${fileId}?token=${token}`;
+        const fileName = item.remote_file_name || fileId;
+
+        // 使用 fetch 获取文件并创建 Blob，强制触发下载
+        const response = await fetch(downloadUrl);
+        if (!response.ok) {
+          throw new Error("下载失败");
+        }
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        // 创建隐藏的 a 标签并触发下载
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = fileName;
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // 释放 Blob URL
+        URL.revokeObjectURL(blobUrl);
+
+        message.success("下载成功");
+        return;
+      }
+
+      // 下载文件列表
+      const jsonStr = item.remote_files || item.value || "[]";
+      const files = JSON.parse(jsonStr);
+
+      if (files.length === 0) {
+        message.error("没有可下载的文件");
+        return;
+      }
+
+      // 下载所有文件
+      for (const file of files) {
+        if (file.file_id) {
+          const downloadUrl = `${getServerBaseUrl()}/api/v1/files/download/${file.file_id}?token=${token}`;
+          const fileName = file.original_name || file.name || "下载文件";
+
+          // 使用 fetch 获取文件并创建 Blob，强制触发下载
+          const response = await fetch(downloadUrl);
+          if (!response.ok) {
+            throw new Error("下载失败");
+          }
+
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+
+          // 创建隐藏的 a 标签并触发下载
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = fileName;
+          link.style.display = "none";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          // 释放 Blob URL
+          URL.revokeObjectURL(blobUrl);
+
+          // 如果有多个文件，添加一点延迟避免浏览器阻止多文件下载
+          if (files.length > 1) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
+        }
+      }
+
+      message.success(
+        files.length === 1 ? "下载成功" : `已开始下载 ${files.length} 个文件`,
+      );
+    } catch {
+      message.error("下载失败");
+    }
+  };
+
   const operationButtons = [
     {
       icon: "i-hugeicons:copy-01",
@@ -186,6 +280,13 @@ const ClipboardItem = ({ item, searchText }: ClipboardItemProps) => {
       onClick: handleCopy,
       show: item.type === "text" || item.type === "html",
       title: "复制",
+    },
+    {
+      icon: "i-hugeicons:download-02",
+      key: "download",
+      onClick: handleDownload,
+      show: item.type === "files" || item.type === "image",
+      title: "下载",
     },
     {
       className: item.favorite ? "text-gold!" : "",
